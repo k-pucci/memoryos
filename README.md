@@ -22,15 +22,15 @@ MemoryOS is a personal knowledge management application that helps users capture
 ## Screenshots
 
 ### Dashboard - Your Memory Hub
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](screenshots/home.png)
 *Clean, modern dashboard featuring recent memory notes and upcoming meetings with an integrated AI assistant*
 
 ### Memory Stack - Organized Collections
-![Memory Stack](screenshots/memory-stack.png)
+![Memory Stack](screenshots/memorystack.png)
 *Six categorized memory collections (Research, Product, Meeting, Learning, Idea, Task) with color-coded organization*
 
 ### AI Assistant - Intelligent Memory Companion
-![AI Assistant](screenshots/ai-assistant.png)
+![AI Assistant](screenshots/aichat.png)
 *Built-in MemoryOS Assistant for natural language queries about your stored memories and information*
 
 ### Calendar - Schedule & Memory Integration
