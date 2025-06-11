@@ -1,7 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Layout from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,7 +53,8 @@ interface FilterState {
   date_to: string | null;
 }
 
-export default function SearchPage() {
+// Separate component that uses useSearchParams
+function SearchContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -304,327 +305,340 @@ export default function SearchPage() {
   };
 
   return (
-    <Layout currentPage="Search">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <SearchIcon className="text-purple-400 mr-2" size={22} />
-            <h1 className="text-2xl font-bold">Search Memories</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <SearchIcon className="text-purple-400 mr-2" size={22} />
+          <h1 className="text-2xl font-bold">Search Memories</h1>
+        </div>
+        
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-700 text-gray-300 hover:bg-slate-700 transition-colors"
+        >
+          <Filter size={16} />
+          <span>Filters</span>
+          {hasActiveFilters() && (
+            <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+          )}
+        </button>
+      </div>
+      
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <SearchIcon size={18} className="text-gray-400" />
+        </div>
+        <Input
+          ref={searchInputRef}
+          value={query}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder="Search your memories..."
+          className="bg-slate-800/50 border-slate-700 text-white pl-10 h-12 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-500/20 transition-all"
+        />
+        {query && (
+          <button 
+            className="absolute right-3 top-[12px] text-gray-400 hover:text-white"
+            onClick={() => {
+              setQuery("");
+              if (filters.category) {
+                performSearch("", filters.category);
+              } else {
+                setResults([]);
+              }
+              if (searchInputRef.current) {
+                searchInputRef.current.focus();
+              }
+            }}
+          >
+            <X size={18} />
+          </button>
+        )}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-xl blur-sm"></div>
+      </div>
+      
+      {/* Recent searches */}
+      {recentSearches.length > 0 && !query && (
+        <div className="mb-2">
+          <div className="flex justify-between items-center mb-1">
+            <p className="text-sm text-gray-400 flex items-center">
+              <Clock size={14} className="mr-1" /> Recent searches
+            </p>
+            <button
+              onClick={clearRecentSearches}
+              className="text-xs text-gray-500 hover:text-gray-300"
+            >
+              Clear
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recentSearches.map((recentQuery, index) => (
+              <button
+                key={index}
+                onClick={() => useRecentSearch(recentQuery)}
+                className="px-2 py-1 text-sm bg-slate-800 text-gray-300 hover:bg-slate-700 rounded-md transition-colors"
+              >
+                {recentQuery}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Advanced filters panel */}
+      {showFilters && (
+        <div className="bg-slate-800/70 border border-slate-700 rounded-lg p-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-white font-medium">Advanced Filters</h3>
+            <button 
+              onClick={() => setShowFilters(false)}
+              className="text-gray-400 hover:text-white"
+            >
+              <X size={16} />
+            </button>
           </div>
           
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-slate-700 text-gray-300 hover:bg-slate-700 transition-colors"
-          >
-            <Filter size={16} />
-            <span>Filters</span>
-            {hasActiveFilters() && (
-              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-            )}
-          </button>
-        </div>
-        
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon size={18} className="text-gray-400" />
-          </div>
-          <Input
-            ref={searchInputRef}
-            value={query}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Search your memories..."
-            className="bg-slate-800/50 border-slate-700 text-white pl-10 h-12 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-500/20 transition-all"
-          />
-          {query && (
-            <button 
-              className="absolute right-3 top-[12px] text-gray-400 hover:text-white"
-              onClick={() => {
-                setQuery("");
-                if (filters.category) {
-                  performSearch("", filters.category);
-                } else {
-                  setResults([]);
-                }
-                if (searchInputRef.current) {
-                  searchInputRef.current.focus();
-                }
-              }}
-            >
-              <X size={18} />
-            </button>
-          )}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-xl blur-sm"></div>
-        </div>
-        
-        {/* Recent searches */}
-        {recentSearches.length > 0 && !query && (
-          <div className="mb-2">
-            <div className="flex justify-between items-center mb-1">
-              <p className="text-sm text-gray-400 flex items-center">
-                <Clock size={14} className="mr-1" /> Recent searches
-              </p>
-              <button
-                onClick={clearRecentSearches}
-                className="text-xs text-gray-500 hover:text-gray-300"
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">Category</label>
+              <select 
+                className="w-full bg-slate-900/50 border-slate-700 text-white rounded-md p-2"
+                value={filters.category || ""}
+                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value || null }))}
               >
-                Clear
-              </button>
+                <option value="">All Categories</option>
+                <option value="Research">Research</option>
+                <option value="Product">Product</option>
+                <option value="Meeting">Meeting</option>
+                <option value="Learning">Learning</option>
+                <option value="Idea">Idea</option>
+                <option value="Task">Task</option>
+              </select>
             </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">Memory Type</label>
+              <select 
+                className="w-full bg-slate-900/50 border-slate-700 text-white rounded-md p-2"
+                value={filters.memory_type || ""}
+                onChange={(e) => setFilters(prev => ({ ...prev, memory_type: e.target.value || null }))}
+              >
+                <option value="">All Types</option>
+                <option value="note">Note</option>
+                <option value="concept">Concept</option>
+                <option value="document">Document</option>
+                <option value="link">Link</option>
+                <option value="event">Event</option>
+                <option value="analysis">Analysis</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-gray-300">Tags</label>
             <div className="flex flex-wrap gap-2">
-              {recentSearches.map((recentQuery, index) => (
+              {availableTags.slice(0, 20).map((tag) => (
                 <button
-                  key={index}
-                  onClick={() => useRecentSearch(recentQuery)}
-                  className="px-2 py-1 text-sm bg-slate-800 text-gray-300 hover:bg-slate-700 rounded-md transition-colors"
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`px-2 py-1 text-xs rounded-full ${
+                    filters.tags.includes(tag)
+                      ? "bg-purple-500/80 text-white hover:bg-purple-500/60"
+                      : "bg-slate-700 text-gray-300 hover:bg-slate-600"
+                  } transition-colors`}
                 >
-                  {recentQuery}
+                  {tag}
                 </button>
               ))}
             </div>
           </div>
-        )}
-        
-        {/* Advanced filters panel */}
-        {showFilters && (
-          <div className="bg-slate-800/70 border border-slate-700 rounded-lg p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-white font-medium">Advanced Filters</h3>
-              <button 
-                onClick={() => setShowFilters(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Category</label>
-                <select 
-                  className="w-full bg-slate-900/50 border-slate-700 text-white rounded-md p-2"
-                  value={filters.category || ""}
-                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value || null }))}
-                >
-                  <option value="">All Categories</option>
-                  <option value="Research">Research</option>
-                  <option value="Product">Product</option>
-                  <option value="Meeting">Meeting</option>
-                  <option value="Learning">Learning</option>
-                  <option value="Idea">Idea</option>
-                  <option value="Task">Task</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">Memory Type</label>
-                <select 
-                  className="w-full bg-slate-900/50 border-slate-700 text-white rounded-md p-2"
-                  value={filters.memory_type || ""}
-                  onChange={(e) => setFilters(prev => ({ ...prev, memory_type: e.target.value || null }))}
-                >
-                  <option value="">All Types</option>
-                  <option value="note">Note</option>
-                  <option value="concept">Concept</option>
-                  <option value="document">Document</option>
-                  <option value="link">Link</option>
-                  <option value="event">Event</option>
-                  <option value="analysis">Analysis</option>
-                </select>
-              </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm text-gray-300">From Date</label>
+              <Input
+                type="date"
+                className="bg-slate-900/50 border-slate-700 text-white"
+                value={filters.date_from || ""}
+                onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value || null }))}
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm text-gray-300">Tags</label>
-              <div className="flex flex-wrap gap-2">
-                {availableTags.slice(0, 20).map((tag) => (
+              <label className="text-sm text-gray-300">To Date</label>
+              <Input
+                type="date"
+                className="bg-slate-900/50 border-slate-700 text-white"
+                value={filters.date_to || ""}
+                onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value || null }))}
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2 pt-2 border-t border-slate-700">
+            <button
+              onClick={clearAllFilters}
+              className="px-3 py-1.5 border border-slate-700 text-gray-300 hover:bg-slate-700 rounded-md transition-colors"
+            >
+              Clear Filters
+            </button>
+            <button
+              onClick={applyFilters}
+              className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-md hover:opacity-90 transition-opacity"
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {filters.category && (
+        <div className="flex items-center">
+          <span className="text-sm text-gray-300 mr-2">Filtering by category:</span>
+          <div className="px-3 py-1.5 rounded-full text-sm bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center">
+            {filters.category}
+            <button 
+              onClick={clearCategory}
+              className="ml-2 text-purple-300 hover:text-white"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
+          {error}
+        </div>
+      )}
+      
+      <div className="h-[calc(100vh-280px)]">
+        {isSearching ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {results.length > 0 ? (
+              <>
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-300 text-sm">
+                    Found {results.length} {results.length === 1 ? 'result' : 'results'}
+                    {query ? ` for "${query}"` : ''}
+                    {filters.category ? ` in category "${filters.category}"` : ''}
+                  </p>
                   <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      filters.tags.includes(tag)
-                        ? "bg-purple-500/80 text-white hover:bg-purple-500/60"
-                        : "bg-slate-700 text-gray-300 hover:bg-slate-600"
-                    } transition-colors`}
+                    onClick={() => router.push('/new-memory')}
+                    className="text-sm text-purple-400 hover:text-purple-300"
                   >
-                    {tag}
+                    + Add new memory
                   </button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">From Date</label>
-                <Input
-                  type="date"
-                  className="bg-slate-900/50 border-slate-700 text-white"
-                  value={filters.date_from || ""}
-                  onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value || null }))}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300">To Date</label>
-                <Input
-                  type="date"
-                  className="bg-slate-900/50 border-slate-700 text-white"
-                  value={filters.date_to || ""}
-                  onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value || null }))}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2 pt-2 border-t border-slate-700">
-              <button
-                onClick={clearAllFilters}
-                className="px-3 py-1.5 border border-slate-700 text-gray-300 hover:bg-slate-700 rounded-md transition-colors"
-              >
-                Clear Filters
-              </button>
-              <button
-                onClick={applyFilters}
-                className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-md hover:opacity-90 transition-opacity"
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {filters.category && (
-          <div className="flex items-center">
-            <span className="text-sm text-gray-300 mr-2">Filtering by category:</span>
-            <div className="px-3 py-1.5 rounded-full text-sm bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center">
-              {filters.category}
-              <button 
-                onClick={clearCategory}
-                className="ml-2 text-purple-300 hover:text-white"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {error && (
-          <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
-            {error}
-          </div>
-        )}
-        
-        <div className="h-[calc(100vh-280px)]">
-          {isSearching ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {results.length > 0 ? (
-                <>
-                  <div className="flex justify-between items-center">
-                    <p className="text-gray-300 text-sm">
-                      Found {results.length} {results.length === 1 ? 'result' : 'results'}
-                      {query ? ` for "${query}"` : ''}
-                      {filters.category ? ` in category "${filters.category}"` : ''}
-                    </p>
-                    <button
-                      onClick={() => router.push('/new-memory')}
-                      className="text-sm text-purple-400 hover:text-purple-300"
-                    >
-                      + Add new memory
-                    </button>
-                  </div>
-                  
-                  {results.map((memory) => (
-                    <Card 
-                      key={memory.id} 
-                      className="bg-slate-800/50 border-slate-700 hover:border-purple-500/30 transition-colors cursor-pointer"
-                      onClick={() => router.push(`/memory/${memory.id}`)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-start">
-                            <h3 className="text-xl font-semibold text-white">{memory.title}</h3>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs px-2 py-1 rounded-full bg-slate-700 text-gray-300">
-                                {memory.category}
-                              </span>
-                              <span className="text-sm text-gray-400">
-                                {formatDistanceToNow(new Date(memory.created_at), { addSuffix: true })}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <p className="text-gray-300">{memory.summary || memory.content.substring(0, 150) + (memory.content.length > 150 ? '...' : '')}</p>
-                          
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {memory.tags && memory.tags.map((tag, idx) => (
-                              <span key={idx} className="px-2 py-0.5 bg-slate-700 text-xs text-gray-300 rounded-full">
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-sm text-gray-400 pt-2 border-t border-slate-700">
-                            <div className="flex items-center gap-1">
-                              {getMemoryTypeIcon(memory.memory_type)}
-                              <span>{memory.memory_type}</span>
-                            </div>
-                            
-                            {memory.source_url && (
-                              <button
-                                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                                  e.stopPropagation();
-                                  if (memory.source_url) { // Add null check
-                                    window.open(memory.source_url, "_blank", "noopener,noreferrer");
-                                  }
-                                }}
-                                className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                              >
-                                <ExternalLink size={14} />
-                                <span>Source</span>
-                              </button>
-                            )}
-                            
-                            {memory.similarity < 1 && (
-                              <div className={`px-2 py-1 rounded-full text-xs ${getMatchBackgroundClass(memory.similarity)}`}>
-                                {Math.round(memory.similarity * 100)}% match
-                              </div>
-                            )}
+                </div>
+                
+                {results.map((memory) => (
+                  <Card 
+                    key={memory.id} 
+                    className="bg-slate-800/50 border-slate-700 hover:border-purple-500/30 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/memory/${memory.id}`)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-xl font-semibold text-white">{memory.title}</h3>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs px-2 py-1 rounded-full bg-slate-700 text-gray-300">
+                              {memory.category}
+                            </span>
+                            <span className="text-sm text-gray-400">
+                              {formatDistanceToNow(new Date(memory.created_at), { addSuffix: true })}
+                            </span>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </>
-              ) : (
-                !isSearching && (query || hasActiveFilters()) && (
-                  <div className="text-center py-20 text-gray-400">
-                    <SearchIcon size={40} className="mx-auto mb-4 text-gray-500 opacity-50" />
-                    <h3 className="text-xl font-medium mb-2">No memories found</h3>
-                    <p className="mb-6">Try a different search term or add a new memory</p>
-                    <button
-                      onClick={() => router.push('/new-memory')}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
-                    >
-                      Add New Memory
-                    </button>
-                  </div>
-                )
-              )}
-              
-              {!isSearching && !query && !hasActiveFilters() && (
+                        
+                        <p className="text-gray-300">{memory.summary || memory.content.substring(0, 150) + (memory.content.length > 150 ? '...' : '')}</p>
+                        
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {memory.tags && memory.tags.map((tag, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-slate-700 text-xs text-gray-300 rounded-full">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                        
+                        <div className="flex items-center justify-between text-sm text-gray-400 pt-2 border-t border-slate-700">
+                          <div className="flex items-center gap-1">
+                            {getMemoryTypeIcon(memory.memory_type)}
+                            <span>{memory.memory_type}</span>
+                          </div>
+                          
+                          {memory.source_url && (
+                            <button
+                              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                                e.stopPropagation();
+                                if (memory.source_url) { // Add null check
+                                  window.open(memory.source_url, "_blank", "noopener,noreferrer");
+                                }
+                              }}
+                              className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                            >
+                              <ExternalLink size={14} />
+                              <span>Source</span>
+                            </button>
+                          )}
+                          
+                          {memory.similarity < 1 && (
+                            <div className={`px-2 py-1 rounded-full text-xs ${getMatchBackgroundClass(memory.similarity)}`}>
+                              {Math.round(memory.similarity * 100)}% match
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              !isSearching && (query || hasActiveFilters()) && (
                 <div className="text-center py-20 text-gray-400">
                   <SearchIcon size={40} className="mx-auto mb-4 text-gray-500 opacity-50" />
-                  <h3 className="text-xl font-medium mb-2">Search your memory stack</h3>
-                  <p>Start typing to search through your memories</p>
+                  <h3 className="text-xl font-medium mb-2">No memories found</h3>
+                  <p className="mb-6">Try a different search term or add a new memory</p>
+                  <button
+                    onClick={() => router.push('/new-memory')}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+                  >
+                    Add New Memory
+                  </button>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+              )
+            )}
+            
+            {!isSearching && !query && !hasActiveFilters() && (
+              <div className="text-center py-20 text-gray-400">
+                <SearchIcon size={40} className="mx-auto mb-4 text-gray-500 opacity-50" />
+                <h3 className="text-xl font-medium mb-2">Search your memory stack</h3>
+                <p>Start typing to search through your memories</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+// Main component with Suspense wrapper
+export default function SearchPage() {
+  return (
+    <Layout currentPage="Search">
+      <Suspense fallback={
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+        </div>
+      }>
+        <SearchContent />
+      </Suspense>
     </Layout>
   );
 }
