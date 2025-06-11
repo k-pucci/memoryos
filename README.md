@@ -7,6 +7,12 @@
 
 MemoryOS is a personal knowledge management application that helps users capture, organize, and retrieve their thoughts, notes, and insights with ease. Built with a focus on user experience and visual appeal, it features a dark, gradient-rich interface reminiscent of cutting-edge productivity tools.
 
+## 🚀 Live Demo
+
+**Try MemoryOS now:** [memoryos.vercel.app](https://memoryos.vercel.app)
+
+> ⚠️ **Demo Environment**: This is a public demo instance. Please do not enter any sensitive or personal information.
+
 ### Key Features
 
 - **Smart Memory Cards**: Dynamic content display with rich text and list support
