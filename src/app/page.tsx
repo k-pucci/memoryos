@@ -307,11 +307,11 @@ export default function HomePage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex gap-6 flex-1 overflow-hidden">
+        <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
           
           {/* Recent Memories */}
-          <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-4 min-h-0 flex flex-col">
+            <div className="flex items-center justify-between flex-shrink-0">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <BookOpen size={20} className="text-purple-400" />
                 Recent Memories
@@ -324,154 +324,160 @@ export default function HomePage() {
               </button>
             </div>
             
-            <ScrollArea className="flex-1 pr-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                  <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-                </div>
-              ) : error ? (
-                <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-200">
-                  {error}
-                </div>
-              ) : memories.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {memories.map((memory) => {
-                    const { content, items } = processMemoryContent(memory);
-                    return (
-                      <MemoryCard
-                        key={memory.id}
-                        id={memory.id}
-                        title={memory.title}
-                        category={memory.category}
-                        content={content}
-                        items={items}
-                        gradient={getCategoryGradient(memory.category)}
-                        icon={getCategoryIcon(memory.category)}
-                        createdAt={memory.created_at}
-                        onClick={navigateToMemory}
-                      />
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                  <Archive size={48} className="text-gray-500 mb-4" />
-                  <p className="mb-2">No memories found</p>
-                  <p className="text-sm text-gray-500 mb-6">Start building your knowledge base</p>
-                  <button
-                    onClick={createNewMemory}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-600 hover:to-blue-600 transition-all cursor-pointer"
-                  >
-                    Add Your First Memory
-                  </button>
-                </div>
-              )}
-            </ScrollArea>
+            <div className="flex-1 min-h-0">
+              <ScrollArea className="h-full pr-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-200">
+                    {error}
+                  </div>
+                ) : memories.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+                    {memories.map((memory) => {
+                      const { content, items } = processMemoryContent(memory);
+                      return (
+                        <MemoryCard
+                          key={memory.id}
+                          id={memory.id}
+                          title={memory.title}
+                          category={memory.category}
+                          content={content}
+                          items={items}
+                          gradient={getCategoryGradient(memory.category)}
+                          icon={getCategoryIcon(memory.category)}
+                          createdAt={memory.created_at}
+                          onClick={navigateToMemory}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                    <Archive size={48} className="text-gray-500 mb-4" />
+                    <p className="mb-2">No memories found</p>
+                    <p className="text-sm text-gray-500 mb-6">Start building your knowledge base</p>
+                    <button
+                      onClick={createNewMemory}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-600 hover:to-blue-600 transition-all cursor-pointer"
+                    >
+                      Add Your First Memory
+                    </button>
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
           </div>
           
           {/* Sidebar with Popular Tags and Quick Actions */}
-          <div className="w-80 space-y-6 flex flex-col overflow-hidden">
-            
-            {/* Popular Tags */}
-            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold flex items-center gap-2">
-                    <Tag size={16} className="text-purple-400" />
-                    Popular Tags
-                  </h3>
-                  <button 
-                    onClick={() => router.push('/library')}
-                    className="text-xs text-gray-400 hover:text-purple-300 transition-colors cursor-pointer"
-                  >
-                    View all
-                  </button>
-                </div>
+          <div className="w-80 min-h-0 flex flex-col">
+            <ScrollArea className="flex-1 pr-2">
+              <div className="space-y-6 pb-4">
                 
-                {stats.popularTags.length > 0 ? (
-                  <div className="space-y-2">
-                    {stats.popularTags.map((tagData, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-purple-500/30 transition-all cursor-pointer">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                          <span className="text-sm text-gray-300 hover:text-white transition-colors">{tagData.tag}</span>
-                        </div>
-                        <span className="text-xs text-gray-400 bg-slate-800 px-2 py-0.5 rounded-full">
-                          {tagData.count}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-400">No tags yet</p>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Quick Actions */}
-            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
-              <CardContent className="p-4">
-                <h3 className="font-bold mb-3 flex items-center gap-2">
-                  <Zap size={16} className="text-blue-400" />
-                  Quick Actions
-                </h3>
-                
-                <div className="space-y-2">
-                  <button
-                    onClick={createNewMemory}
-                    className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-500/30 hover:to-blue-500/30 hover:border-purple-500/50 transition-all text-white text-left cursor-pointer"
-                  >
-                    <Plus size={16} />
-                    <span className="text-sm">Add New Memory</span>
-                  </button>
-                  
-                  <button
-                    onClick={openAIAgents}
-                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-blue-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
-                  >
-                    <Brain size={16} />
-                    <span className="text-sm">Chat with AI Agents</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => router.push('/library')}
-                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-emerald-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
-                  >
-                    <BookOpen size={16} />
-                    <span className="text-sm">Browse Library</span>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Memory Insights */}
-            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
-              <CardContent className="p-4">
-                <h3 className="font-bold mb-3 flex items-center gap-2">
-                  <TrendingUp size={16} className="text-emerald-400" />
-                  Insights
-                </h3>
-                
-                <div className="space-y-3">
-                  <div className="p-3 bg-slate-900/50 rounded-lg">
-                    <p className="text-xs text-gray-400 mb-1">Most Active Category</p>
-                    <p className="text-sm text-gray-300">
-                      {stats.popularTags[0]?.tag || "No data yet"}
-                    </p>
-                  </div>
-                  
-                  <div className="p-3 bg-slate-900/50 rounded-lg">
-                    <p className="text-xs text-gray-400 mb-1">Weekly Growth</p>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp size={14} className="text-emerald-400" />
-                      <p className="text-sm text-emerald-300">
-                        +{stats.recentActivity} this week
-                      </p>
+                {/* Popular Tags */}
+                <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold flex items-center gap-2">
+                        <Tag size={16} className="text-purple-400" />
+                        Popular Tags
+                      </h3>
+                      <button 
+                        onClick={() => router.push('/library')}
+                        className="text-xs text-gray-400 hover:text-purple-300 transition-colors cursor-pointer"
+                      >
+                        View all
+                      </button>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    
+                    {stats.popularTags.length > 0 ? (
+                      <div className="space-y-2">
+                        {stats.popularTags.map((tagData, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-purple-500/30 transition-all cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                              <span className="text-sm text-gray-300 hover:text-white transition-colors">{tagData.tag}</span>
+                            </div>
+                            <span className="text-xs text-gray-400 bg-slate-800 px-2 py-0.5 rounded-full">
+                              {tagData.count}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-400">No tags yet</p>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Quick Actions */}
+                <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
+                  <CardContent className="p-4">
+                    <h3 className="font-bold mb-3 flex items-center gap-2">
+                      <Zap size={16} className="text-blue-400" />
+                      Quick Actions
+                    </h3>
+                    
+                    <div className="space-y-2">
+                      <button
+                        onClick={createNewMemory}
+                        className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-500/30 hover:to-blue-500/30 hover:border-purple-500/50 transition-all text-white text-left cursor-pointer"
+                      >
+                        <Plus size={16} />
+                        <span className="text-sm">Add New Memory</span>
+                      </button>
+                      
+                      <button
+                        onClick={openAIAgents}
+                        className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-blue-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
+                      >
+                        <Brain size={16} />
+                        <span className="text-sm">Chat with AI Agents</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => router.push('/library')}
+                        className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-emerald-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
+                      >
+                        <BookOpen size={16} />
+                        <span className="text-sm">Browse Library</span>
+                      </button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Memory Insights */}
+                <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
+                  <CardContent className="p-4">
+                    <h3 className="font-bold mb-3 flex items-center gap-2">
+                      <TrendingUp size={16} className="text-emerald-400" />
+                      Insights
+                    </h3>
+                    
+                    <div className="space-y-3">
+                      <div className="p-3 bg-slate-900/50 rounded-lg">
+                        <p className="text-xs text-gray-400 mb-1">Most Active Category</p>
+                        <p className="text-sm text-gray-300">
+                          {stats.popularTags[0]?.tag || "No data yet"}
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 bg-slate-900/50 rounded-lg">
+                        <p className="text-xs text-gray-400 mb-1">Weekly Growth</p>
+                        <div className="flex items-center gap-2">
+                          <TrendingUp size={14} className="text-emerald-400" />
+                          <p className="text-sm text-emerald-300">
+                            +{stats.recentActivity} this week
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </div>
