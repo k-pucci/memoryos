@@ -88,10 +88,10 @@ export default function Layout({ children, currentPage = "Home" }: LayoutProps) 
   // Navigation items with their paths
   const navItems: NavItem[] = [
     { icon: <Home size={18} />, label: "Home", path: "/" },
-    { icon: <Database size={18} />, label: "Memory Stack", path: "/memory-stack" },
+    // { icon: <Database size={18} />, label: "Memory Stack", path: "/memory-stack" },
     { icon: <BookOpen size={18} />, label: "Library", path: "/library" },
     { icon: <Bot size={18} />, label: "AI Agents", path: "/ai-agents" },
-    { icon: <Calendar size={18} />, label: "Calendar", path: "/calendar" },
+    // { icon: <Calendar size={18} />, label: "Calendar", path: "/calendar" },
   ];
   
   const bottomNavItems: NavItem[] = [
