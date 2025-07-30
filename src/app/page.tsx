@@ -4,14 +4,20 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
-  Avatar, 
-  AvatarFallback 
-} from "@/components/ui/avatar";
-import { 
   ArrowRight,
-  Calendar,
   Clock,
-  Loader2
+  Loader2,
+  TrendingUp,
+  BookOpen,
+  Brain,
+  Zap,
+  Plus,
+  Tag,
+  Calendar,
+  BarChart3,
+  Activity,
+  Star,
+  Archive
 } from "lucide-react";
 import Layout from "@/components/layout";
 import { useRouter } from "next/navigation";
@@ -23,7 +29,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Memory Card Component with proper TypeScript typing
+// Memory Card Component
 interface MemoryCardProps {
   id: string;
   title: string;
@@ -33,19 +39,6 @@ interface MemoryCardProps {
   gradient: string;
   icon: string;
   createdAt: string;
-  onClick: (id: string) => void;
-}
-
-// Meeting Card Component
-interface MeetingCardProps {
-  id: string;
-  title: string;
-  time: string;
-  duration: number;
-  description: string;
-  items?: string[];
-  attendees: {initials: string, color: string}[];
-  gradient: string;
   onClick: (id: string) => void;
 }
 
@@ -62,20 +55,31 @@ interface Memory {
   updated_at: string;
 }
 
+// Stats interface
+interface Stats {
+  totalMemories: number;
+  totalCategories: number;
+  recentActivity: number;
+  popularTags: { tag: string; count: number }[];
+}
+
 // Helper to get proper icon for each category
 const getCategoryIcon = (category: string): string => {
   const categoryIcons: Record<string, string> = {
-    "Research": "🤖",
+    "Research": "🔬",
     "Product": "💡",
-    "User Experience": "🚀",
-    "Strategy": "🗺️",
-    "Meeting": "📅",
+    "User Experience": "🎨",
+    "Strategy": "🎯",
+    "Meeting": "👥",
     "Task": "✅",
     "Learning": "📚",
-    "Idea": "💭"
+    "Idea": "💭",
+    "Personal": "👤",
+    "Work": "💼",
+    "Project": "🚀"
   };
   
-  return categoryIcons[category] || "📋"; // Default icon
+  return categoryIcons[category] || "📋";
 };
 
 // Helper to get proper gradient for each category
@@ -88,82 +92,93 @@ const getCategoryGradient = (category: string): string => {
     "Meeting": "from-blue-500/20 to-indigo-500/20",
     "Task": "from-gray-500/20 to-slate-500/20",
     "Learning": "from-teal-500/20 to-emerald-500/20",
-    "Idea": "from-pink-500/20 to-rose-500/20"
+    "Idea": "from-pink-500/20 to-rose-500/20",
+    "Personal": "from-violet-500/20 to-purple-500/20",
+    "Work": "from-slate-500/20 to-gray-500/20",
+    "Project": "from-orange-500/20 to-red-500/20"
   };
   
-  return categoryGradients[category] || "from-gray-500/20 to-slate-500/20"; // Default gradient
+  return categoryGradients[category] || "from-gray-500/20 to-slate-500/20";
 };
-
-// Sample meeting data - Replace this with actual data in a future update
-const upcomingMeetings = [
-  {
-    id: "meet-001",
-    title: "Client Check-in",
-    time: "Today, 2:00 PM",
-    duration: 30,
-    description: "Client had questions about the onboarding process; suggested more examples.",
-    gradient: "from-blue-500/10 to-purple-500/10",
-    attendees: [
-      { initials: "JD", color: "blue" },
-      { initials: "AR", color: "purple" }
-    ]
-  },
-  {
-    id: "meet-002",
-    title: "Q1 Planning",
-    time: "Tomorrow, 10:00 AM",
-    duration: 60,
-    description: "Main concerns:",
-    items: ["Resource allocation", "Product roadmap alignment", "Customer feedback trends"],
-    gradient: "from-purple-500/10 to-pink-500/10",
-    attendees: [
-      { initials: "TK", color: "pink" },
-      { initials: "LM", color: "indigo" },
-      { initials: "JS", color: "emerald" },
-      { initials: "BP", color: "amber" },
-      { initials: "AN", color: "blue" }
-    ]
-  }
-];
 
 export default function HomePage() {
   const router = useRouter();
   const [memories, setMemories] = useState<Memory[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalMemories: 0,
+    totalCategories: 0,
+    recentActivity: 0,
+    popularTags: []
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   
-  // Fetch memories from Supabase
+  // Fetch memories and stats from Supabase
   useEffect(() => {
-    async function fetchRecentMemories() {
+    async function fetchData() {
       try {
         setIsLoading(true);
         
-        // Fetch the most recent memories
-        const { data, error } = await supabase
+        // Fetch recent memories
+        const { data: memoriesData, error: memoriesError } = await supabase
           .from('memories')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(6);
         
-        if (error) {
-          throw error;
-        }
+        if (memoriesError) throw memoriesError;
         
-        setMemories(data || []);
+        // Fetch stats
+        const { data: allMemories, error: statsError } = await supabase
+          .from('memories')
+          .select('category, tags, created_at');
+        
+        if (statsError) throw statsError;
+        
+        // Calculate stats
+        const categories = new Set(allMemories?.map(m => m.category) || []);
+        const recentWeek = allMemories?.filter(m => {
+          const weekAgo = new Date();
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return new Date(m.created_at) > weekAgo;
+        }) || [];
+        
+        // Calculate popular tags
+        const tagCounts: Record<string, number> = {};
+        allMemories?.forEach(memory => {
+          if (memory.tags && Array.isArray(memory.tags)) {
+            memory.tags.forEach(tag => {
+              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+          }
+        });
+        
+        const popularTags = Object.entries(tagCounts)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5)
+          .map(([tag, count]) => ({ tag, count }));
+        
+        setMemories(memoriesData || []);
+        setStats({
+          totalMemories: allMemories?.length || 0,
+          totalCategories: categories.size,
+          recentActivity: recentWeek.length,
+          popularTags
+        });
+        
       } catch (err: any) {
-        console.error('Error fetching memories:', err);
-        setError(err.message || 'Failed to load memories');
+        console.error('Error fetching data:', err);
+        setError(err.message || 'Failed to load data');
       } finally {
         setIsLoading(false);
       }
     }
     
-    fetchRecentMemories();
+    fetchData();
   }, []);
   
-  // Process memory content to extract bullet points if needed
+  // Process memory content
   const processMemoryContent = (memory: Memory): { content: string, items: string[] } => {
-    // Simple heuristic: Check if content has bullet points (lines starting with - or *)
     const lines = memory.content.split('\n');
     const bulletPattern = /^[-*•]\s+(.+)$/;
     
@@ -185,140 +200,279 @@ export default function HomePage() {
     };
   };
   
-  // Handle navigation to memory detail
+  // Navigation functions
   const navigateToMemory = (id: string) => {
     router.push(`/memory/${id}`);
   };
   
-  // Handle navigation to meeting detail
-  const navigateToMeeting = (id: string) => {
-    router.push(`/calendar/${id}`);
-  };
-  
-  // Handle "View all" navigation
   const viewAllMemories = () => {
-    router.push('/memory-stack'); // Navigate to Memory Stack page
+    router.push('/library');
   };
   
-  const viewAllMeetings = () => {
-    router.push('/calendar'); // Navigate to Calendar page
+  const createNewMemory = () => {
+    router.push('/new-memory');
   };
   
-  // Ask Memory Assistant
-  const askMemoryAssistant = (question: string) => {
-    // In a real app, this would trigger an AI query
-    console.log("Asking Memory Assistant:", question);
-    // Would open a chat interface or display results
-    router.push(`/search?q=${encodeURIComponent(question)}`);
+  const openAIAgents = () => {
+    router.push('/ai-agents');
   };
 
   return (
     <Layout currentPage="Home">
-      <div className="flex gap-6 h-full overflow-hidden">
-        {/* Main Content - Notes */}
-        <div className="flex-1 space-y-6 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Recent Memory Notes</h2>
-            <button 
-              onClick={viewAllMemories}
-              className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              View all <ArrowRight size={14} />
-            </button>
-          </div>
-          
-          <ScrollArea className="flex-1 pr-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
-              </div>
-            ) : error ? (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-200">
-                {error}
-              </div>
-            ) : memories.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {memories.map((memory) => {
-                  const { content, items } = processMemoryContent(memory);
-                  return (
-                    <MemoryCard
-                      key={memory.id}
-                      id={memory.id}
-                      title={memory.title}
-                      category={memory.category}
-                      content={content}
-                      items={items}
-                      gradient={getCategoryGradient(memory.category)}
-                      icon={getCategoryIcon(memory.category)}
-                      createdAt={memory.created_at}
-                      onClick={navigateToMemory}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-                <p className="mb-4">No memories found</p>
-                <button
-                  onClick={() => router.push('/new-memory')}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
-                >
-                  Add Your First Memory
-                </button>
-              </div>
-            )}
-          </ScrollArea>
-        </div>
+      <div className="space-y-6 h-full overflow-hidden flex flex-col">
         
-        {/* Sidebar */}
-        <div className="w-96 space-y-6 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Upcoming Meetings</h2>
-            <button 
-              onClick={viewAllMeetings}
-              className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+        {/* Welcome Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Welcome back!
+            </h1>
+            <p className="text-gray-400 mt-1">Here's what's happening with your memories</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={openAIAgents}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all text-white"
             >
-              View all <ArrowRight size={14} />
+              <Brain size={18} />
+              AI Agents
+            </button>
+            <button
+              onClick={createNewMemory}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+            >
+              <Plus size={18} />
+              New Memory
             </button>
           </div>
-          
-          <ScrollArea className="flex-1">
-            <div className="space-y-4">
-              {upcomingMeetings.map((meeting) => (
-                <MeetingCard 
-                  key={meeting.id}
-                  id={meeting.id}
-                  title={meeting.title}
-                  time={meeting.time}
-                  duration={meeting.duration}
-                  description={meeting.description}
-                  items={meeting.items}
-                  attendees={meeting.attendees}
-                  gradient={meeting.gradient}
-                  onClick={navigateToMeeting}
-                />
-              ))}
-            </div>
-          </ScrollArea>
-          
-          <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700 backdrop-blur-sm hover:shadow-md transition-all">
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border-purple-500/20">
             <CardContent className="p-4">
-              <h3 className="font-bold mb-3 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">Memory Assistant</h3>
-              <div className="p-3 bg-slate-900/80 rounded-lg border border-slate-700">
-                <p className="text-sm text-gray-300">
-                  <span className="italic">"When did I say I'd get back about the onboarding plan?"</span>
-                </p>
-              </div>
-              <div className="flex mt-3 justify-end">
-                <button 
-                  onClick={() => askMemoryAssistant("When did I say I'd get back about the onboarding plan?")}
-                  className="bg-gradient-to-r from-purple-500 to-blue-500 px-3 py-1.5 text-sm rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer"
-                >
-                  Ask Memory
-                </button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Total Memories</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalMemories}</p>
+                </div>
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <Archive size={20} className="text-purple-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
+          
+          <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Categories</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalCategories}</p>
+                </div>
+                <div className="p-2 bg-blue-500/20 rounded-lg">
+                  <BarChart3 size={20} className="text-blue-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-emerald-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">This Week</p>
+                  <p className="text-2xl font-bold text-white">{stats.recentActivity}</p>
+                </div>
+                <div className="p-2 bg-emerald-500/20 rounded-lg">
+                  <Activity size={20} className="text-emerald-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Popular Tags</p>
+                  <p className="text-2xl font-bold text-white">{stats.popularTags.length}</p>
+                </div>
+                <div className="p-2 bg-amber-500/20 rounded-lg">
+                  <Tag size={20} className="text-amber-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex gap-6 flex-1 overflow-hidden">
+          
+          {/* Recent Memories */}
+          <div className="flex-1 space-y-4 overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <BookOpen size={20} className="text-purple-400" />
+                Recent Memories
+              </h2>
+              <button 
+                onClick={viewAllMemories}
+                className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                View all <ArrowRight size={14} />
+              </button>
+            </div>
+            
+            <ScrollArea className="flex-1 pr-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+                </div>
+              ) : error ? (
+                <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4 text-red-200">
+                  {error}
+                </div>
+              ) : memories.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {memories.map((memory) => {
+                    const { content, items } = processMemoryContent(memory);
+                    return (
+                      <MemoryCard
+                        key={memory.id}
+                        id={memory.id}
+                        title={memory.title}
+                        category={memory.category}
+                        content={content}
+                        items={items}
+                        gradient={getCategoryGradient(memory.category)}
+                        icon={getCategoryIcon(memory.category)}
+                        createdAt={memory.created_at}
+                        onClick={navigateToMemory}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                  <Archive size={48} className="text-gray-500 mb-4" />
+                  <p className="mb-2">No memories found</p>
+                  <p className="text-sm text-gray-500 mb-6">Start building your knowledge base</p>
+                  <button
+                    onClick={createNewMemory}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+                  >
+                    Add Your First Memory
+                  </button>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+          
+          {/* Sidebar with Popular Tags and Quick Actions */}
+          <div className="w-80 space-y-6 flex flex-col overflow-hidden">
+            
+            {/* Popular Tags */}
+            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold flex items-center gap-2">
+                    <Tag size={16} className="text-purple-400" />
+                    Popular Tags
+                  </h3>
+                  <button 
+                    onClick={() => router.push('/library')}
+                    className="text-xs text-gray-400 hover:text-white transition-colors"
+                  >
+                    View all
+                  </button>
+                </div>
+                
+                {stats.popularTags.length > 0 ? (
+                  <div className="space-y-2">
+                    {stats.popularTags.map((tagData, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg hover:bg-slate-900/70 transition-colors cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                          <span className="text-sm text-gray-300">{tagData.tag}</span>
+                        </div>
+                        <span className="text-xs text-gray-400 bg-slate-800 px-2 py-0.5 rounded-full">
+                          {tagData.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">No tags yet</p>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Quick Actions */}
+            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
+              <CardContent className="p-4">
+                <h3 className="font-bold mb-3 flex items-center gap-2">
+                  <Zap size={16} className="text-blue-400" />
+                  Quick Actions
+                </h3>
+                
+                <div className="space-y-2">
+                  <button
+                    onClick={createNewMemory}
+                    className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all text-white text-left"
+                  >
+                    <Plus size={16} />
+                    <span className="text-sm">Add New Memory</span>
+                  </button>
+                  
+                  <button
+                    onClick={openAIAgents}
+                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900/70 transition-colors text-gray-300 text-left"
+                  >
+                    <Brain size={16} />
+                    <span className="text-sm">Chat with AI Agents</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => router.push('/library')}
+                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900/70 transition-colors text-gray-300 text-left"
+                  >
+                    <BookOpen size={16} />
+                    <span className="text-sm">Browse Library</span>
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Memory Insights */}
+            <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
+              <CardContent className="p-4">
+                <h3 className="font-bold mb-3 flex items-center gap-2">
+                  <TrendingUp size={16} className="text-emerald-400" />
+                  Insights
+                </h3>
+                
+                <div className="space-y-3">
+                  <div className="p-3 bg-slate-900/50 rounded-lg">
+                    <p className="text-xs text-gray-400 mb-1">Most Active Category</p>
+                    <p className="text-sm text-gray-300">
+                      {stats.popularTags[0]?.tag || "No data yet"}
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 bg-slate-900/50 rounded-lg">
+                    <p className="text-xs text-gray-400 mb-1">Weekly Growth</p>
+                    <div className="flex items-center gap-2">
+                      <TrendingUp size={14} className="text-emerald-400" />
+                      <p className="text-sm text-emerald-300">
+                        +{stats.recentActivity} this week
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </Layout>
@@ -328,81 +482,43 @@ export default function HomePage() {
 function MemoryCard({ id, title, category, content = "", items = [], gradient, icon, createdAt, onClick }: MemoryCardProps) {
   return (
     <Card 
-      className={`bg-gradient-to-br ${gradient} border-none overflow-hidden relative group hover:shadow-lg hover:scale-[1.01] transition-all cursor-pointer`}
+      className={`bg-gradient-to-br ${gradient} border-none overflow-hidden relative group hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer`}
       onClick={() => onClick(id)}
     >
       <div className="absolute inset-0 bg-slate-900/80"></div>
       <CardContent className="p-4 relative">
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">{icon}</span>
-            <span className="text-xs px-2 py-0.5 bg-white/10 rounded-full text-gray-300">{category}</span>
+            <span className="text-xs px-2 py-1 bg-white/10 rounded-full text-gray-300 border border-white/20">
+              {category}
+            </span>
           </div>
           <div className="flex items-center text-xs text-gray-400 gap-1">
             <Clock size={12} />
             <span>{formatDistanceToNow(new Date(createdAt), { addSuffix: true })}</span>
           </div>
         </div>
-        <h2 className="font-bold text-white mb-2">{title}</h2>
+        
+        <h2 className="font-bold text-white mb-2 line-clamp-2">{title}</h2>
+        
         {content && (
-          <p className="text-sm text-gray-300 line-clamp-3">{content}</p>
+          <p className="text-sm text-gray-300 line-clamp-3 mb-2">{content}</p>
         )}
+        
         {items && items.length > 0 && (
-          <ul className="list-disc list-inside text-sm text-gray-300 ml-1 space-y-1 mt-2">
-            {items.slice(0, 3).map((item: string, index: number) => (
-              <li key={index}>{item}</li>
+          <ul className="list-disc list-inside text-sm text-gray-300 ml-1 space-y-1">
+            {items.slice(0, 2).map((item: string, index: number) => (
+              <li key={index} className="line-clamp-1">{item}</li>
             ))}
-            {items.length > 3 && (
-              <li className="text-gray-400">+{items.length - 3} more items</li>
+            {items.length > 2 && (
+              <li className="text-gray-400">+{items.length - 2} more items</li>
             )}
           </ul>
         )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function MeetingCard({ id, title, time, duration, description, items = [], attendees, gradient, onClick }: MeetingCardProps) {
-  return (
-    <Card 
-      className="bg-slate-800/50 border-slate-700 overflow-hidden relative group cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
-      onClick={() => onClick(id)}
-    >
-      <div className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="font-bold text-white">{title}</h3>
-            <div className="flex items-center text-xs text-gray-400 gap-1">
-              <Calendar size={12} />
-              <span>{time}</span>
-            </div>
-          </div>
-          <span className={`bg-${attendees[0].color}-500/20 text-${attendees[0].color}-300 px-2 py-1 rounded-full text-xs`}>
-            {duration} min
-          </span>
-        </div>
-        <p className="text-sm text-gray-300">
-          {description}
-        </p>
-        {items && items.length > 0 && (
-          <ul className="list-disc list-inside text-sm text-gray-300 ml-1 space-y-1 mt-2">
-            {items.map((item: string, index: number) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
-        )}
-        <div className="flex mt-3 gap-2 items-center">
-          {attendees.slice(0, 3).map((attendee, index) => (
-            <Avatar key={index} className="h-6 w-6">
-              <AvatarFallback className={`bg-${attendee.color}-500/20 text-${attendee.color}-300 text-xs`}>
-                {attendee.initials}
-              </AvatarFallback>
-            </Avatar>
-          ))}
-          {attendees.length > 3 && (
-            <span className="text-xs text-gray-400 self-center">+{attendees.length - 3} more</span>
-          )}
+        
+        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ArrowRight size={16} className="text-white/80" />
         </div>
       </CardContent>
     </Card>
