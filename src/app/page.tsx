@@ -232,14 +232,14 @@ export default function HomePage() {
           <div className="flex gap-3">
             <button
               onClick={openAIAgents}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all text-white"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-500/30 hover:to-blue-500/30 hover:border-purple-500/50 transition-all text-white cursor-pointer"
             >
               <Brain size={18} />
               AI Agents
             </button>
             <button
               onClick={createNewMemory}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-600 hover:to-blue-600 transition-all cursor-pointer"
             >
               <Plus size={18} />
               New Memory
@@ -318,7 +318,7 @@ export default function HomePage() {
               </h2>
               <button 
                 onClick={viewAllMemories}
-                className="text-sm text-gray-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-sm text-gray-400 hover:text-purple-300 flex items-center gap-1 transition-colors cursor-pointer"
               >
                 View all <ArrowRight size={14} />
               </button>
@@ -360,7 +360,7 @@ export default function HomePage() {
                   <p className="text-sm text-gray-500 mb-6">Start building your knowledge base</p>
                   <button
                     onClick={createNewMemory}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-600 hover:to-blue-600 transition-all cursor-pointer"
                   >
                     Add Your First Memory
                   </button>
@@ -382,7 +382,7 @@ export default function HomePage() {
                   </h3>
                   <button 
                     onClick={() => router.push('/library')}
-                    className="text-xs text-gray-400 hover:text-white transition-colors"
+                    className="text-xs text-gray-400 hover:text-purple-300 transition-colors cursor-pointer"
                   >
                     View all
                   </button>
@@ -391,10 +391,10 @@ export default function HomePage() {
                 {stats.popularTags.length > 0 ? (
                   <div className="space-y-2">
                     {stats.popularTags.map((tagData, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg hover:bg-slate-900/70 transition-colors cursor-pointer">
+                      <div key={index} className="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-purple-500/30 transition-all cursor-pointer">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                          <span className="text-sm text-gray-300">{tagData.tag}</span>
+                          <span className="text-sm text-gray-300 hover:text-white transition-colors">{tagData.tag}</span>
                         </div>
                         <span className="text-xs text-gray-400 bg-slate-800 px-2 py-0.5 rounded-full">
                           {tagData.count}
@@ -419,7 +419,7 @@ export default function HomePage() {
                 <div className="space-y-2">
                   <button
                     onClick={createNewMemory}
-                    className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all text-white text-left"
+                    className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-500/30 hover:to-blue-500/30 hover:border-purple-500/50 transition-all text-white text-left cursor-pointer"
                   >
                     <Plus size={16} />
                     <span className="text-sm">Add New Memory</span>
@@ -427,7 +427,7 @@ export default function HomePage() {
                   
                   <button
                     onClick={openAIAgents}
-                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900/70 transition-colors text-gray-300 text-left"
+                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-blue-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
                   >
                     <Brain size={16} />
                     <span className="text-sm">Chat with AI Agents</span>
@@ -435,7 +435,7 @@ export default function HomePage() {
                   
                   <button
                     onClick={() => router.push('/library')}
-                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900/70 transition-colors text-gray-300 text-left"
+                    className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-emerald-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
                   >
                     <BookOpen size={16} />
                     <span className="text-sm">Browse Library</span>
@@ -482,15 +482,15 @@ export default function HomePage() {
 function MemoryCard({ id, title, category, content = "", items = [], gradient, icon, createdAt, onClick }: MemoryCardProps) {
   return (
     <Card 
-      className={`bg-gradient-to-br ${gradient} border-none overflow-hidden relative group hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer`}
+      className={`bg-gradient-to-br ${gradient} border-none overflow-hidden relative group hover:shadow-lg hover:scale-[1.02] hover:shadow-purple-500/10 transition-all cursor-pointer`}
       onClick={() => onClick(id)}
     >
-      <div className="absolute inset-0 bg-slate-900/80"></div>
+      <div className="absolute inset-0 bg-slate-900/80 group-hover:bg-slate-900/70 transition-all"></div>
       <CardContent className="p-4 relative">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">{icon}</span>
-            <span className="text-xs px-2 py-1 bg-white/10 rounded-full text-gray-300 border border-white/20">
+            <span className="text-xs px-2 py-1 bg-white/10 group-hover:bg-white/20 rounded-full text-gray-300 group-hover:text-white border border-white/20 group-hover:border-white/30 transition-all">
               {category}
             </span>
           </div>
@@ -500,19 +500,19 @@ function MemoryCard({ id, title, category, content = "", items = [], gradient, i
           </div>
         </div>
         
-        <h2 className="font-bold text-white mb-2 line-clamp-2">{title}</h2>
+        <h2 className="font-bold text-white group-hover:text-purple-100 mb-2 line-clamp-2 transition-colors">{title}</h2>
         
         {content && (
-          <p className="text-sm text-gray-300 line-clamp-3 mb-2">{content}</p>
+          <p className="text-sm text-gray-300 group-hover:text-gray-200 line-clamp-3 mb-2 transition-colors">{content}</p>
         )}
         
         {items && items.length > 0 && (
-          <ul className="list-disc list-inside text-sm text-gray-300 ml-1 space-y-1">
+          <ul className="list-disc list-inside text-sm text-gray-300 group-hover:text-gray-200 ml-1 space-y-1 transition-colors">
             {items.slice(0, 2).map((item: string, index: number) => (
               <li key={index} className="line-clamp-1">{item}</li>
             ))}
             {items.length > 2 && (
-              <li className="text-gray-400">+{items.length - 2} more items</li>
+              <li className="text-gray-400 group-hover:text-gray-300">+{items.length - 2} more items</li>
             )}
           </ul>
         )}
