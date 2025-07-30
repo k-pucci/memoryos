@@ -482,7 +482,7 @@ function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 text-gray-400 hover:text-white"
+              className="h-8 w-8 text-gray-400 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
               onClick={() => setShowActions(!showActions)}
             >
               <MoreVertical size={16} />
@@ -495,7 +495,7 @@ function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
                     onEdit(agent);
                     setShowActions(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 flex items-center"
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 hover:text-white flex items-center transition-colors cursor-pointer"
                 >
                   <Edit2 size={14} className="mr-2" />
                   Edit
@@ -505,7 +505,7 @@ function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
                     onDelete(agent.id);
                     setShowActions(false);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center"
+                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 flex items-center transition-colors cursor-pointer"
                 >
                   <Trash2 size={14} className="mr-2" />
                   Delete
@@ -523,10 +523,9 @@ function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
         
         <div className="mt-4 pt-4 border-t border-slate-700">
           <Button 
-            className={`w-full bg-gradient-to-r from-${agent.color}-500 to-${agent.color}-400 text-white hover:shadow-lg hover:shadow-${agent.color}-500/20 transition-all`}
+            className={`w-full bg-gradient-to-r from-${agent.color}-500 to-${agent.color}-400 text-white hover:from-${agent.color}-400 hover:to-${agent.color}-300 hover:shadow-lg hover:shadow-${agent.color}-500/20 transition-all cursor-pointer`}
             onClick={() => onChat(agent.id)}
           >
-            <MessageSquare size={16} className="mr-2" />
             Start Chat
           </Button>
         </div>
