@@ -371,7 +371,7 @@ export default function HomePage() {
             </div>
           </div>
           
-          {/* Sidebar with Popular Tags and Quick Actions */}
+          {/* Sidebar with Popular Tags and Insights */}
           <div className="w-80 min-h-0 flex flex-col">
             <ScrollArea className="flex-1 pr-2">
               <div className="space-y-6 pb-4">
@@ -412,42 +412,6 @@ export default function HomePage() {
                   </CardContent>
                 </Card>
                 
-                {/* Quick Actions */}
-                <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
-                  <CardContent className="p-4">
-                    <h3 className="font-bold mb-3 flex items-center gap-2">
-                      <Zap size={16} className="text-blue-400" />
-                      Quick Actions
-                    </h3>
-                    
-                    <div className="space-y-2">
-                      <button
-                        onClick={createNewMemory}
-                        className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 hover:from-purple-500/30 hover:to-blue-500/30 hover:border-purple-500/50 transition-all text-white text-left cursor-pointer"
-                      >
-                        <Plus size={16} />
-                        <span className="text-sm">Add New Memory</span>
-                      </button>
-                      
-                      <button
-                        onClick={openAIAgents}
-                        className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-blue-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
-                      >
-                        <Brain size={16} />
-                        <span className="text-sm">Chat with AI Agents</span>
-                      </button>
-                      
-                      <button
-                        onClick={() => router.push('/library')}
-                        className="w-full flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-800/70 hover:border hover:border-emerald-500/30 transition-all text-gray-300 hover:text-white text-left cursor-pointer"
-                      >
-                        <BookOpen size={16} />
-                        <span className="text-sm">Browse Library</span>
-                      </button>
-                    </div>
-                  </CardContent>
-                </Card>
-                
                 {/* Memory Insights */}
                 <Card className="bg-gradient-to-br from-slate-800/70 to-slate-800/30 border-slate-700">
                   <CardContent className="p-4">
@@ -473,6 +437,34 @@ export default function HomePage() {
                           </p>
                         </div>
                       </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Navigation Card - Cleaner alternative to Quick Actions */}
+                <Card className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-purple-500/20">
+                  <CardContent className="p-4">
+                    <h3 className="font-bold mb-3 flex items-center gap-2">
+                      <Zap size={16} className="text-blue-400" />
+                      Explore More
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => router.push('/library')}
+                        className="flex flex-col items-center gap-2 p-3 bg-slate-900/30 rounded-lg hover:bg-slate-800/50 hover:border hover:border-emerald-500/30 transition-all text-gray-300 hover:text-white cursor-pointer"
+                      >
+                        <BookOpen size={20} />
+                        <span className="text-xs text-center">Library</span>
+                      </button>
+                      
+                      <button
+                        onClick={openAIAgents}
+                        className="flex flex-col items-center gap-2 p-3 bg-slate-900/30 rounded-lg hover:bg-slate-800/50 hover:border hover:border-blue-500/30 transition-all text-gray-300 hover:text-white cursor-pointer"
+                      >
+                        <Brain size={20} />
+                        <span className="text-xs text-center">AI Agents</span>
+                      </button>
                     </div>
                   </CardContent>
                 </Card>
