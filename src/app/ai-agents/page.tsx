@@ -34,12 +34,7 @@ import {
   DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -207,7 +202,7 @@ export default function AIAgentsPage() {
       name: "",
       description: "",
       directive: "",
-      avatar: defaultAvators[0].path,
+      avatar: defaultAvatars[0].path,
       specialty: "general",
       color: "blue"
     });
@@ -460,9 +455,10 @@ interface AIAgentCardProps {
 
 function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
   const specialty = specialties.find(s => s.id === agent.specialty);
+  const [showActions, setShowActions] = useState(false);
   
   return (
-    <Card className="bg-slate-800/50 border-slate-700 overflow-hidden relative group hover:shadow-lg hover:border-purple-500/30 transition-all cursor-pointer">
+    <Card className="bg-slate-800/50 border-slate-700 overflow-hidden relative group hover:shadow-lg hover:border-purple-500/30 transition-all">
       <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-${agent.color}-500 to-${agent.color}-400`}></div>
       
       <CardHeader className="pb-4">
@@ -482,23 +478,41 @@ function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
             </div>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <MoreVertical size={16} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-slate-800 border-slate-700">
-              <DropdownMenuItem onClick={() => onEdit(agent)} className="text-gray-300 hover:bg-slate-700">
-                <Edit2 size={14} className="mr-2" />
-                Edit Agent
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDelete(agent.id)} className="text-red-400 hover:bg-red-500/10">
-                <Trash2 size={14} className="mr-2" />
-                Delete Agent
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-gray-400 hover:text-white"
+              onClick={() => setShowActions(!showActions)}
+            >
+              <MoreVertical size={16} />
+            </Button>
+            
+            {showActions && (
+              <div className="absolute right-0 top-10 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-10 min-w-[120px]">
+                <button
+                  onClick={() => {
+                    onEdit(agent);
+                    setShowActions(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-slate-700 flex items-center"
+                >
+                  <Edit2 size={14} className="mr-2" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    onDelete(agent.id);
+                    setShowActions(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 flex items-center"
+                >
+                  <Trash2 size={14} className="mr-2" />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       
@@ -517,6 +531,14 @@ function AIAgentCard({ agent, onEdit, onDelete, onChat }: AIAgentCardProps) {
           </Button>
         </div>
       </CardContent>
+      
+      {/* Click outside to close actions */}
+      {showActions && (
+        <div 
+          className="fixed inset-0 z-5" 
+          onClick={() => setShowActions(false)}
+        />
+      )}
     </Card>
   );
 }
