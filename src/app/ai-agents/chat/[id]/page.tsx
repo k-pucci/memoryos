@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useEmbeddings } from "@/hooks/useEmbeddings";
 
 // Sample agents data - this would come from your database in a real app
 const sampleAgents = [
@@ -68,17 +69,6 @@ const sampleAgents = [
   },
 ];
 
-// Sample message history
-const sampleMessages = [
-  {
-    id: "msg-1",
-    role: "assistant",
-    content:
-      "Hi there! I'm your MemoryOS Assistant. How can I help you access your memories today?",
-    timestamp: "2025-05-17T13:00:00Z",
-  },
-];
-
 // Message interface
 interface Message {
   id: string;
@@ -94,11 +84,13 @@ interface Message {
 
 export default function AgentChatPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const { generateEmbedding, isLoading: isEmbeddingLoading } = useEmbeddings();
   const [agent, setAgent] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Get agent details
   useEffect(() => {
@@ -127,9 +119,20 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
     }
   }, [messages]);
 
-  // Send a message
-  // Replace the sendMessage function in your chat component with this:
+  // Auto-resize textarea
+  const adjustTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height =
+        Math.min(textareaRef.current.scrollHeight, 120) + "px";
+    }
+  };
 
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputMessage]);
+
+  // Send a message
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -147,6 +150,20 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
     setIsLoading(true);
 
     try {
+      console.log("🤖 Generating embedding for message:", currentMessage);
+
+      // Generate embedding for the user's message
+      let embedding = null;
+      try {
+        embedding = await generateEmbedding(currentMessage);
+        console.log("✅ Embedding generated successfully");
+      } catch (error) {
+        console.error("❌ Failed to generate embedding:", error);
+        // Continue without embedding - will fall back to text search
+      }
+
+      console.log("📤 Calling AI agent API...");
+
       // Make actual API call to your AI agents endpoint
       const response = await fetch("/api/ai-agents", {
         method: "POST",
@@ -155,9 +172,8 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
         },
         body: JSON.stringify({
           message: currentMessage,
-          agentType: getAgentType(agent.specialty), // Map agent specialty to agent type
-          // Note: We're not sending embedding here since the client-side embedding generation
-          // would require the useEmbeddings hook. For now, the API will fall back to text search
+          agentType: getAgentType(agent.specialty),
+          embedding: embedding, // Now sending the embedding!
         }),
       });
 
@@ -166,6 +182,7 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
       }
 
       const data = await response.json();
+      console.log("📥 API response:", data);
 
       // Create AI message from API response
       const aiMessage: Message = {
@@ -185,6 +202,14 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
       };
 
       setMessages((prev) => [...prev, aiMessage]);
+
+      // Log search type for debugging
+      if (data.debug) {
+        console.log("🔍 Search debug info:", data.debug);
+        console.log(
+          `Search type: ${data.searchType}, Found: ${data.debug.memoriesFound} memories`
+        );
+      }
     } catch (error) {
       console.error("Error calling AI agent:", error);
 
@@ -219,7 +244,7 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
   };
 
   // Handle input submission
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -444,66 +469,70 @@ export default function AgentChatPage({ params }: { params: { id: string } }) {
               </ScrollArea>
             </CardContent>
 
-            {/* Input Area - Fixed at bottom */}
+            {/* Input Area - Fixed at bottom with improved layout */}
             <div className="flex-shrink-0 border-t border-slate-700/50 bg-slate-800/20">
               <CardFooter className="p-4">
-                <div className="flex items-end w-full gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-gray-400 hover:text-white flex-shrink-0 mb-1"
-                  >
-                    <Paperclip size={18} />
-                  </Button>
-
-                  <div className="relative flex-1 max-w-none">
-                    <textarea
-                      placeholder="Ask a question about your memories..."
-                      className="w-full min-h-[44px] max-h-[120px] px-3 py-2 pr-12 bg-slate-900/50 border border-slate-700 rounded-md text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                      rows={1}
-                      style={{
-                        height: "auto",
-                        minHeight: "44px",
-                      }}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = "auto";
-                        target.style.height =
-                          Math.min(target.scrollHeight, 120) + "px";
-                      }}
-                    />
+                <div className="w-full space-y-2">
+                  {/* Input row */}
+                  <div className="flex items-end gap-3">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 bottom-1 h-8 w-8 text-purple-400 hover:text-purple-300 flex-shrink-0"
-                      onClick={() => setInputMessage("")}
-                      disabled={!inputMessage}
+                      className="text-gray-400 hover:text-white flex-shrink-0 h-10 w-10"
                     >
-                      <Sparkles size={14} />
+                      <Paperclip size={18} />
+                    </Button>
+
+                    <div className="relative flex-1">
+                      <textarea
+                        ref={textareaRef}
+                        placeholder="Ask a question about your memories..."
+                        className="w-full min-h-[44px] max-h-[120px] px-4 py-3 pr-12 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        rows={1}
+                        disabled={isLoading || isEmbeddingLoading}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-purple-400 hover:text-purple-300"
+                        onClick={() => setInputMessage("")}
+                        disabled={!inputMessage}
+                      >
+                        <Sparkles size={14} />
+                      </Button>
+                    </div>
+
+                    <Button
+                      size="icon"
+                      className={`bg-${agent.color}-500 text-white hover:bg-${agent.color}-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 h-11 w-11`}
+                      onClick={sendMessage}
+                      disabled={
+                        !inputMessage.trim() || isLoading || isEmbeddingLoading
+                      }
+                    >
+                      {isLoading || isEmbeddingLoading ? (
+                        <RefreshCw size={18} className="animate-spin" />
+                      ) : (
+                        <Send size={18} />
+                      )}
                     </Button>
                   </div>
 
-                  <Button
-                    size="icon"
-                    className={`bg-${agent.color}-500 text-white hover:bg-${agent.color}-600 flex-shrink-0 h-11 w-11`}
-                    onClick={sendMessage}
-                    disabled={!inputMessage.trim() || isLoading}
-                  >
-                    <Send size={18} />
-                  </Button>
-                </div>
-
-                {/* Helper text */}
-                <div className="mt-2 text-xs text-gray-500 text-center">
-                  Press Enter to send • Shift+Enter for new line
+                  {/* Helper text */}
+                  <div className="text-xs text-gray-500 text-center">
+                    {isEmbeddingLoading ? (
+                      <span className="text-yellow-400">
+                        Generating embedding...
+                      </span>
+                    ) : isLoading ? (
+                      <span className="text-blue-400">AI is thinking...</span>
+                    ) : (
+                      "Press Enter to send • Shift+Enter for new line"
+                    )}
+                  </div>
                 </div>
               </CardFooter>
             </div>
