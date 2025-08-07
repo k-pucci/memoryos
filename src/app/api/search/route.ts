@@ -24,20 +24,29 @@ export async function POST(request: NextRequest) {
     // If embedding is provided, use semantic search
     if (embedding && Array.isArray(embedding) && embedding.length === 384) {
       try {
+        console.log("🔍 Using semantic search with embedding");
         const { data, error } = await supabase.rpc("match_memories", {
           query_embedding: embedding,
-          similarity_threshold: threshold,
+          match_threshold: threshold,
           match_count: limit,
+          filter_category: null,
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Vector search RPC error:", error);
+          throw error;
+        }
+
         results = data || [];
+        console.log(`✅ Semantic search found ${results.length} results`);
       } catch (error) {
         console.error("Vector search error:", error);
         // Fallback to text search
+        console.log("🔄 Falling back to text search");
         results = await performTextSearch(query, limit);
       }
     } else {
+      console.log("📝 Using text search (no valid embedding)");
       // Fallback to text search
       results = await performTextSearch(query, limit);
     }
@@ -46,7 +55,7 @@ export async function POST(request: NextRequest) {
       results,
       query,
       count: results.length,
-      searchType: embedding ? "semantic" : "text",
+      searchType: embedding && embedding.length === 384 ? "semantic" : "text",
     });
   } catch (error) {
     console.error("Search error:", error);
