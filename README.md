@@ -224,7 +224,7 @@ NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
 
 # AI/Search Integration (future enhancement)
-OPENAI_API_KEY="your-openai-key"
+GROQ_API_KEY="your-groq-key"
 ```
 
 ### Customization
