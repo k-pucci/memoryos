@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
         console.log("🔍 Using semantic search...");
         const { data, error } = await supabase.rpc("match_memories", {
           query_embedding: embedding,
-          match_threshold: 0.6, // Fixed: was similarity_threshold
+          match_threshold: 0.4,
           match_count: 5,
-          filter_category: null, // Added: required parameter
+          filter_category: null,
         });
 
         if (!error && data && data.length > 0) {
