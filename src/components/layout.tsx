@@ -1,4 +1,4 @@
-// components/layout.tsx
+// components/layout.tsx - Updated with correct navigation
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -88,13 +88,16 @@ export default function Layout({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchResultsRef = useRef<HTMLDivElement>(null);
 
-  // Navigation items with their paths
+  // Navigation items with their paths - UPDATED
   const navItems: NavItem[] = [
     { icon: <Home size={18} />, label: "Home", path: "/" },
-    // { icon: <Database size={18} />, label: "Memory Stack", path: "/memory-stack" },
     { icon: <BookOpen size={18} />, label: "Library", path: "/library" },
-    { icon: <Bot size={18} />, label: "AI Agents", path: "/ai-agents" },
-    // { icon: <Calendar size={18} />, label: "Calendar", path: "/calendar" },
+    { icon: <Bot size={18} />, label: "AI Chat", path: "/chat" }, // ← Changed from /ai-agents to /chat
+    {
+      icon: <Settings size={18} />,
+      label: "Create Agents",
+      path: "/agents/create",
+    }, // ← Agent management
   ];
 
   const bottomNavItems: NavItem[] = [
@@ -281,6 +284,7 @@ export default function Layout({
               label={item.label}
               collapsed={sidebarCollapsed}
               active={
+                (currentPage === "Chat" && item.path === "/chat") ||
                 currentPage === item.label ||
                 (currentPage === "Home" &&
                   item.path === "/" &&

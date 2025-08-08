@@ -1,47 +1,33 @@
 "use client";
 import { useState, useCallback } from "react";
-import { pipeline } from "@xenova/transformers";
-
-let embedder: any = null;
 
 export function useEmbeddings() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-
-  const initializeEmbedder = useCallback(async () => {
-    if (embedder) return embedder;
-
-    setIsLoading(true);
-    try {
-      console.log("🤖 Loading embedding model...");
-      embedder = await pipeline(
-        "feature-extraction",
-        "Xenova/all-MiniLM-L6-v2"
-      );
-      console.log("✅ Embedding model loaded!");
-      setIsReady(true);
-      return embedder;
-    } catch (error) {
-      console.error("❌ Failed to load embedding model:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const [isReady, setIsReady] = useState(true); // API is always "ready"
 
   const generateEmbedding = useCallback(
     async (text: string): Promise<number[]> => {
+      setIsLoading(true);
       try {
-        const model = await initializeEmbedder();
-        const output = await model(text, { pooling: "mean", normalize: true });
-        return Array.from(output.data);
+        const response = await fetch("/api/embeddings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        return data.embedding;
       } catch (error) {
         console.error("Embedding generation error:", error);
         // Fallback: return a simple keyword-based vector
         return generateKeywordVector(text);
+      } finally {
+        setIsLoading(false);
       }
     },
-    [initializeEmbedder]
+    []
   );
 
   const searchMemories = useCallback(
@@ -76,6 +62,13 @@ export function useEmbeddings() {
     },
     [generateEmbedding]
   );
+
+  const initializeEmbedder = useCallback(async () => {
+    // This is now a no-op since initialization happens server-side
+    // But we keep it for compatibility with existing code
+    setIsReady(true);
+    return true;
+  }, []);
 
   return {
     generateEmbedding,

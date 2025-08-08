@@ -216,7 +216,7 @@ export default function HomePage() {
   };
 
   const openAIAgents = () => {
-    router.push("/ai-agents");
+    router.push("/agents/create");
   };
 
   return (
