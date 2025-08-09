@@ -1,3 +1,5 @@
+/* /src/app/globals.css */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -44,106 +46,372 @@
 }
 
 :root {
-  --radius: 0.5rem; /* Slightly smaller radius for modern look */
+  --radius: 0.75rem; /* 12px - modern rounded corners */
 
-  /* Clean, minimal light theme */
-  --background: oklch(0.99 0 0); /* Almost white */
-  --foreground: oklch(0.15 0 0); /* Deep gray text */
-  --card: oklch(1 0 0); /* Pure white cards */
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
+  /* === LIGHT THEME - Clean & Modern === */
+  --background: #fafafa; /* Soft white background */
+  --foreground: #0a0a0a; /* Deep black text */
 
-  /* Single accent color - professional blue */
-  --primary: oklch(0.5 0.12 240); /* Professional blue */
-  --primary-foreground: oklch(0.99 0 0);
+  /* Cards with subtle elevation */
+  --card: #ffffff; /* Pure white cards */
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
 
-  /* Subtle secondary colors */
-  --secondary: oklch(0.96 0 0); /* Very light gray */
-  --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.45 0 0); /* Medium gray */
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.15 0 0);
+  /* Professional purple accent */
+  --primary: #7c3aed; /* Purple-600 */
+  --primary-foreground: #ffffff;
 
-  /* Minimal borders and inputs */
-  --border: oklch(0.92 0 0); /* Light border */
-  --input: oklch(0.98 0 0); /* Subtle input bg */
-  --ring: oklch(0.5 0.12 240); /* Focus ring matches primary */
+  /* Subtle grays for UI elements */
+  --secondary: #f1f5f9; /* Slate-100 */
+  --secondary-foreground: #0a0a0a;
+  --muted: #f8fafc; /* Slate-50 */
+  --muted-foreground: #64748b; /* Slate-500 */
+  --accent: #f1f5f9;
+  --accent-foreground: #0a0a0a;
+
+  /* Light borders and inputs */
+  --border: #e2e8f0; /* Slate-200 */
+  --input: #ffffff; /* White input backgrounds */
+  --ring: #7c3aed; /* Purple focus ring */
 
   /* Error state */
-  --destructive: oklch(0.55 0.15 15); /* Clean red */
+  --destructive: #ef4444; /* Red-500 */
 
-  /* Clean sidebar */
-  --sidebar: oklch(0.98 0 0); /* Very light gray */
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.5 0.12 240); /* Same as primary */
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.94 0 0); /* Slightly darker for hover */
-  --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.5 0.12 240);
+  /* Clean light sidebar */
+  --sidebar: #f8fafc; /* Slate-50 */
+  --sidebar-foreground: #0a0a0a;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9; /* Slate-100 for hover */
+  --sidebar-accent-foreground: #0a0a0a;
+  --sidebar-border: #e2e8f0; /* Slate-200 */
+  --sidebar-ring: #7c3aed;
 
-  /* Charts - subtle, professional palette */
-  --chart-1: oklch(0.5 0.12 240); /* Primary blue */
-  --chart-2: oklch(0.6 0.12 160); /* Green */
-  --chart-3: oklch(0.65 0.15 50); /* Orange */
-  --chart-4: oklch(0.55 0.15 300); /* Purple */
-  --chart-5: oklch(0.45 0.1 200); /* Teal */
+  /* Memory type colors - Light theme */
+  --memory-research: #3b82f6; /* Blue-500 */
+  --memory-research-bg: #dbeafe; /* Blue-100 */
+  --memory-research-border: #93c5fd; /* Blue-300 */
+
+  --memory-product: #8b5cf6; /* Violet-500 */
+  --memory-product-bg: #ede9fe; /* Violet-100 */
+  --memory-product-border: #c4b5fd; /* Violet-300 */
+
+  --memory-meeting: #10b981; /* Emerald-500 */
+  --memory-meeting-bg: #d1fae5; /* Emerald-100 */
+  --memory-meeting-border: #6ee7b7; /* Emerald-300 */
+
+  --memory-learning: #f59e0b; /* Amber-500 */
+  --memory-learning-bg: #fef3c7; /* Amber-100 */
+  --memory-learning-border: #fcd34d; /* Amber-300 */
+
+  --memory-idea: #ec4899; /* Pink-500 */
+  --memory-idea-bg: #fce7f3; /* Pink-100 */
+  --memory-idea-border: #f9a8d4; /* Pink-300 */
+
+  --memory-task: #6366f1; /* Indigo-500 */
+  --memory-task-bg: #e0e7ff; /* Indigo-100 */
+  --memory-task-border: #a5b4fc; /* Indigo-300 */
+
+  --memory-note: #06b6d4; /* Cyan-500 */
+  --memory-note-bg: #cffafe; /* Cyan-100 */
+  --memory-note-border: #67e8f9; /* Cyan-300 */
+
+  --memory-document: #22c55e; /* Green-500 */
+  --memory-document-bg: #dcfce7; /* Green-100 */
+  --memory-document-border: #86efac; /* Green-300 */
+
+  --memory-link: #f97316; /* Orange-500 */
+  --memory-link-bg: #fed7aa; /* Orange-200 */
+  --memory-link-border: #fdba74; /* Orange-300 */
+
+  --memory-analysis: #a855f7; /* Purple-500 */
+  --memory-analysis-bg: #f3e8ff; /* Purple-100 */
+  --memory-analysis-border: #d8b4fe; /* Purple-300 */
+
+  --memory-concept: #14b8a6; /* Teal-500 */
+  --memory-concept-bg: #ccfbf1; /* Teal-100 */
+  --memory-concept-border: #5eead4; /* Teal-300 */
+
+  --memory-event: #f43f5e; /* Rose-500 */
+  --memory-event-bg: #ffe4e6; /* Rose-100 */
+  --memory-event-border: #fda4af; /* Rose-300 */
+
+  /* Chart colors */
+  --chart-1: #7c3aed;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #ec4899;
+  --chart-5: #06b6d4;
 }
 
 .dark {
-  /* Clean dark theme */
-  --background: oklch(0.08 0 0); /* Very dark */
-  --foreground: oklch(0.95 0 0); /* Almost white text */
-  --card: oklch(0.12 0 0); /* Dark cards */
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.95 0 0);
+  /* === DARK THEME - Clean & Modern === */
+  --background: #0a0a0a; /* Deep black */
+  --foreground: #fafafa; /* Off-white text */
 
-  /* Brighter primary for dark mode */
-  --primary: oklch(0.65 0.15 240); /* Brighter blue */
-  --primary-foreground: oklch(0.05 0 0);
+  /* Dark cards with subtle borders */
+  --card: #161616; /* Dark gray cards */
+  --card-foreground: #fafafa;
+  --popover: #161616;
+  --popover-foreground: #fafafa;
 
-  /* Dark mode secondary colors */
-  --secondary: oklch(0.18 0 0); /* Dark gray */
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.65 0 0); /* Medium light gray */
-  --accent: oklch(0.18 0 0);
-  --accent-foreground: oklch(0.95 0 0);
+  /* Brighter purple for dark mode */
+  --primary: #a855f7; /* Purple-500 */
+  --primary-foreground: #0a0a0a;
+
+  /* Dark secondary colors */
+  --secondary: #262626; /* Neutral-800 */
+  --secondary-foreground: #fafafa;
+  --muted: #171717; /* Neutral-900 */
+  --muted-foreground: #a3a3a3; /* Neutral-400 */
+  --accent: #262626;
+  --accent-foreground: #fafafa;
 
   /* Dark borders */
-  --border: oklch(0.25 0 0); /* Subtle border */
-  --input: oklch(0.15 0 0); /* Input background */
-  --ring: oklch(0.65 0.15 240); /* Focus ring */
+  --border: #404040; /* Neutral-700 */
+  --input: #171717; /* Dark input bg */
+  --ring: #a855f7; /* Purple focus ring */
 
   /* Dark error state */
-  --destructive: oklch(0.65 0.2 20);
+  --destructive: #f87171; /* Red-400 */
 
   /* Dark sidebar */
-  --sidebar: oklch(0.1 0 0); /* Slightly lighter than bg */
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.65 0.15 240);
-  --sidebar-primary-foreground: oklch(0.05 0 0);
-  --sidebar-accent: oklch(0.2 0 0); /* Hover state */
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.65 0.15 240);
+  --sidebar: #0d0d0d; /* Slightly lighter than background */
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #a855f7;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #262626; /* Hover state */
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #404040;
+  --sidebar-ring: #a855f7;
 
-  /* Dark charts */
-  --chart-1: oklch(0.65 0.15 240);
-  --chart-2: oklch(0.7 0.15 160);
-  --chart-3: oklch(0.75 0.2 50);
-  --chart-4: oklch(0.65 0.2 300);
-  --chart-5: oklch(0.55 0.15 200);
+  /* Memory type colors - Dark theme (brighter versions) */
+  --memory-research: #60a5fa; /* Blue-400 */
+  --memory-research-bg: #1e3a8a; /* Blue-800 with opacity */
+  --memory-research-border: #1d4ed8; /* Blue-700 */
+
+  --memory-product: #a78bfa; /* Violet-400 */
+  --memory-product-bg: #5b21b6; /* Violet-800 */
+  --memory-product-border: #7c3aed; /* Violet-600 */
+
+  --memory-meeting: #34d399; /* Emerald-400 */
+  --memory-meeting-bg: #065f46; /* Emerald-800 */
+  --memory-meeting-border: #059669; /* Emerald-600 */
+
+  --memory-learning: #fbbf24; /* Amber-400 */
+  --memory-learning-bg: #92400e; /* Amber-800 */
+  --memory-learning-border: #d97706; /* Amber-600 */
+
+  --memory-idea: #f472b6; /* Pink-400 */
+  --memory-idea-bg: #9d174d; /* Pink-800 */
+  --memory-idea-border: #db2777; /* Pink-600 */
+
+  --memory-task: #818cf8; /* Indigo-400 */
+  --memory-task-bg: #3730a3; /* Indigo-800 */
+  --memory-task-border: #4f46e5; /* Indigo-600 */
+
+  --memory-note: #22d3ee; /* Cyan-400 */
+  --memory-note-bg: #155e75; /* Cyan-800 */
+  --memory-note-border: #0891b2; /* Cyan-600 */
+
+  --memory-document: #4ade80; /* Green-400 */
+  --memory-document-bg: #166534; /* Green-800 */
+  --memory-document-border: #16a34a; /* Green-600 */
+
+  --memory-link: #fb923c; /* Orange-400 */
+  --memory-link-bg: #9a3412; /* Orange-800 */
+  --memory-link-border: #ea580c; /* Orange-600 */
+
+  --memory-analysis: #c084fc; /* Purple-400 */
+  --memory-analysis-bg: #6b21a8; /* Purple-800 */
+  --memory-analysis-border: #9333ea; /* Purple-600 */
+
+  --memory-concept: #2dd4bf; /* Teal-400 */
+  --memory-concept-bg: #115e59; /* Teal-800 */
+  --memory-concept-border: #0d9488; /* Teal-600 */
+
+  --memory-event: #fb7185; /* Rose-400 */
+  --memory-event-bg: #9f1239; /* Rose-800 */
+  --memory-event-border: #e11d48; /* Rose-600 */
+
+  /* Dark chart colors */
+  --chart-1: #a855f7;
+  --chart-2: #34d399;
+  --chart-3: #fbbf24;
+  --chart-4: #f472b6;
+  --chart-5: #22d3ee;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Improved scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
+  }
+}
+
+/* Memory type utility classes */
+@layer utilities {
+  .memory-research {
+    color: var(--memory-research);
+  }
+  .memory-research-bg {
+    background-color: var(--memory-research-bg);
+  }
+  .memory-research-border {
+    border-color: var(--memory-research-border);
+  }
+
+  .memory-product {
+    color: var(--memory-product);
+  }
+  .memory-product-bg {
+    background-color: var(--memory-product-bg);
+  }
+  .memory-product-border {
+    border-color: var(--memory-product-border);
+  }
+
+  .memory-meeting {
+    color: var(--memory-meeting);
+  }
+  .memory-meeting-bg {
+    background-color: var(--memory-meeting-bg);
+  }
+  .memory-meeting-border {
+    border-color: var(--memory-meeting-border);
+  }
+
+  .memory-learning {
+    color: var(--memory-learning);
+  }
+  .memory-learning-bg {
+    background-color: var(--memory-learning-bg);
+  }
+  .memory-learning-border {
+    border-color: var(--memory-learning-border);
+  }
+
+  .memory-idea {
+    color: var(--memory-idea);
+  }
+  .memory-idea-bg {
+    background-color: var(--memory-idea-bg);
+  }
+  .memory-idea-border {
+    border-color: var(--memory-idea-border);
+  }
+
+  .memory-task {
+    color: var(--memory-task);
+  }
+  .memory-task-bg {
+    background-color: var(--memory-task-bg);
+  }
+  .memory-task-border {
+    border-color: var(--memory-task-border);
+  }
+
+  .memory-note {
+    color: var(--memory-note);
+  }
+  .memory-note-bg {
+    background-color: var(--memory-note-bg);
+  }
+  .memory-note-border {
+    border-color: var(--memory-note-border);
+  }
+
+  .memory-document {
+    color: var(--memory-document);
+  }
+  .memory-document-bg {
+    background-color: var(--memory-document-bg);
+  }
+  .memory-document-border {
+    border-color: var(--memory-document-border);
+  }
+
+  .memory-link {
+    color: var(--memory-link);
+  }
+  .memory-link-bg {
+    background-color: var(--memory-link-bg);
+  }
+  .memory-link-border {
+    border-color: var(--memory-link-border);
+  }
+
+  .memory-analysis {
+    color: var(--memory-analysis);
+  }
+  .memory-analysis-bg {
+    background-color: var(--memory-analysis-bg);
+  }
+  .memory-analysis-border {
+    border-color: var(--memory-analysis-border);
+  }
+
+  .memory-concept {
+    color: var(--memory-concept);
+  }
+  .memory-concept-bg {
+    background-color: var(--memory-concept-bg);
+  }
+  .memory-concept-border {
+    border-color: var(--memory-concept-border);
+  }
+
+  .memory-event {
+    color: var(--memory-event);
+  }
+  .memory-event-bg {
+    background-color: var(--memory-event-bg);
+  }
+  .memory-event-border {
+    border-color: var(--memory-event-border);
+  }
+}
+
+/* Component-specific improvements */
+@layer components {
+  .card-shadow {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  }
+
+  .card-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .dark .card-shadow {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  }
+
+  .dark .card-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+      0 4px 6px -4px rgb(0 0 0 / 0.3);
   }
 }

@@ -1,4 +1,4 @@
-// components/layout.tsx - Updated with correct navigation
+// components/layout.tsx - Updated with clean theming
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -25,6 +25,13 @@ import {
   Bot,
   Moon,
   Sun,
+  BarChart3,
+  Puzzle,
+  Rocket,
+  GraduationCap,
+  Microscope,
+  Lightbulb,
+  CheckSquare,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTheme } from "@/components/ThemeProvider";
@@ -71,6 +78,26 @@ function debounce<F extends (...args: any[]) => any>(func: F, wait: number) {
   };
 }
 
+// Get icon for memory type
+const getMemoryTypeIcon = (memoryType: string) => {
+  const iconMap: { [key: string]: React.ReactNode } = {
+    note: <Edit size={14} />,
+    document: <FileText size={14} />,
+    link: <Globe size={14} />,
+    analysis: <BarChart3 size={14} />,
+    concept: <Puzzle size={14} />,
+    event: <Calendar size={14} />,
+    research: <Microscope size={14} />,
+    product: <Rocket size={14} />,
+    meeting: <Calendar size={14} />,
+    learning: <GraduationCap size={14} />,
+    idea: <Lightbulb size={14} />,
+    task: <CheckSquare size={14} />,
+  };
+
+  return iconMap[memoryType.toLowerCase()] || <Archive size={14} />;
+};
+
 export default function Layout({
   children,
   currentPage = "Home",
@@ -88,16 +115,16 @@ export default function Layout({
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchResultsRef = useRef<HTMLDivElement>(null);
 
-  // Navigation items with their paths - UPDATED
+  // Navigation items with their paths
   const navItems: NavItem[] = [
     { icon: <Home size={18} />, label: "Home", path: "/" },
     { icon: <BookOpen size={18} />, label: "Library", path: "/library" },
-    { icon: <Bot size={18} />, label: "AI Chat", path: "/chat" }, // ← Changed from /ai-agents to /chat
+    { icon: <Bot size={18} />, label: "AI Chat", path: "/chat" },
     {
       icon: <Settings size={18} />,
       label: "Create Agents",
       path: "/agents/create",
-    }, // ← Agent management
+    },
   ];
 
   const bottomNavItems: NavItem[] = [
@@ -106,7 +133,6 @@ export default function Layout({
       label: "Notifications",
       path: "/notifications",
     },
-    { icon: <Settings size={18} />, label: "Settings", path: "/settings" },
   ];
 
   // Handle navigation
@@ -216,26 +242,6 @@ export default function Layout({
     }
   };
 
-  // Get icon for memory type
-  const getMemoryTypeIcon = (memoryType: string) => {
-    switch (memoryType.toLowerCase()) {
-      case "note":
-        return <Edit size={14} />;
-      case "link":
-        return <Globe size={14} />;
-      case "document":
-        return <FileText size={14} />;
-      case "analysis":
-        return <Search size={14} />;
-      case "concept":
-        return <BookOpen size={14} />;
-      case "event":
-        return <Calendar size={14} />;
-      default:
-        return <Archive size={14} />;
-    }
-  };
-
   return (
     <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
@@ -251,17 +257,17 @@ export default function Layout({
               className="flex items-center cursor-pointer"
               onClick={() => navigateTo("/")}
             >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-500 text-2xl font-bold mr-1">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500 text-2xl font-bold mr-1">
                 Memory
               </span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-400 text-2xl font-bold">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-500 text-2xl font-bold">
                 OS
               </span>
             </div>
           )}
           {sidebarCollapsed && (
             <div
-              className="mx-auto text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-indigo-400 text-2xl font-bold cursor-pointer"
+              className="mx-auto text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500 text-2xl font-bold cursor-pointer"
               onClick={() => navigateTo("/")}
             >
               M
@@ -299,7 +305,7 @@ export default function Layout({
         <div className="mt-auto flex flex-col space-y-1">
           {/* Theme toggle button */}
           <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent/50 transition-colors relative group cursor-pointer text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent transition-colors relative group cursor-pointer text-sidebar-foreground/70 hover:text-sidebar-foreground"
             onClick={toggleTheme}
           >
             <div className="text-sidebar-foreground/60 group-hover:text-sidebar-foreground/80">
@@ -340,7 +346,7 @@ export default function Layout({
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search your memories..."
-              className="bg-secondary/50 border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all"
+              className="bg-card border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all card-shadow"
               onFocus={() => {
                 if (
                   searchQuery.trim().length >= 2 &&
@@ -363,24 +369,23 @@ export default function Layout({
                 <X size={16} />
               </button>
             )}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-500/5 to-blue-500/5 rounded-xl blur-sm"></div>
 
             {/* Search Results Dropdown */}
             {showSearchResults && (
               <div
                 ref={searchResultsRef}
-                className="absolute top-full left-0 w-full mt-2 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-20"
+                className="absolute top-full left-0 w-full mt-2 bg-popover border border-border rounded-lg card-shadow-lg overflow-hidden z-20"
               >
                 {isSearching ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 text-sidebar-primary animate-spin" />
+                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="max-h-[400px] overflow-y-auto">
                     {searchResults.map((memory) => (
                       <div
                         key={memory.id}
-                        className="p-3 border-b border-border last:border-b-0 hover:bg-secondary/50 cursor-pointer"
+                        className="p-3 border-b border-border last:border-b-0 hover:bg-accent cursor-pointer"
                         onClick={() => viewMemory(memory.id)}
                       >
                         <div className="flex justify-between mb-1">
@@ -393,7 +398,7 @@ export default function Layout({
                             })}
                           </span>
                         </div>
-                        <p className="text-sm text-foreground/80 line-clamp-2">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
                           {memory.summary ||
                             memory.content.substring(0, 120) +
                               (memory.content.length > 120 ? "..." : "")}
@@ -403,14 +408,14 @@ export default function Layout({
                             {getMemoryTypeIcon(memory.memory_type)}
                             <span className="ml-1">{memory.memory_type}</span>
                           </div>
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-secondary text-foreground/80">
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
                             {memory.category}
                           </span>
                         </div>
                       </div>
                     ))}
                     <div
-                      className="p-3 text-center bg-popover hover:bg-secondary cursor-pointer text-sidebar-primary hover:text-sidebar-primary/80 text-sm"
+                      className="p-3 text-center bg-popover hover:bg-accent cursor-pointer text-primary hover:text-primary/80 text-sm font-medium"
                       onClick={viewAllResults}
                     >
                       See all results for "{searchQuery}"
@@ -420,7 +425,7 @@ export default function Layout({
                   <div className="p-6 text-center text-muted-foreground">
                     <p>No results found for "{searchQuery}"</p>
                     <button
-                      className="mt-2 text-sidebar-primary hover:text-sidebar-primary/80 text-sm"
+                      className="mt-2 text-primary hover:text-primary/80 text-sm font-medium"
                       onClick={() => navigateTo("/new-memory")}
                     >
                       + Add a new memory
@@ -440,10 +445,10 @@ export default function Layout({
               <Plus size={18} />
             </button>
             <Avatar
-              className="border-2 border-purple-500/30 h-10 w-10 cursor-pointer"
+              className="border-2 border-primary/30 h-10 w-10 cursor-pointer"
               onClick={() => navigateTo("/profile")}
             >
-              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500">
+              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
                 MS
               </AvatarFallback>
             </Avatar>
@@ -467,17 +472,13 @@ function NavButton({
 }: NavButtonProps) {
   return (
     <button
-      className={`flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent/50 transition-colors relative group cursor-pointer ${
+      className={`flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent transition-colors relative group cursor-pointer ${
         active
-          ? "bg-gradient-to-r from-sidebar-primary/20 to-blue-500/20 text-sidebar-foreground"
+          ? "bg-sidebar-primary/10 text-sidebar-primary border border-sidebar-primary/20"
           : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
       }`}
       onClick={onClick}
     >
-      {active && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-sidebar-primary to-blue-500 rounded-r-full" />
-      )}
-
       <div
         className={
           active
@@ -488,7 +489,7 @@ function NavButton({
         {icon}
       </div>
 
-      {!collapsed && <span className="text-sm">{label}</span>}
+      {!collapsed && <span className="text-sm font-medium">{label}</span>}
     </button>
   );
 }

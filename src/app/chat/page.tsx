@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useEmbeddings } from "@/hooks/useEmbeddings";
 import Layout from "@/components/layout";
+import { cn } from "@/lib/utils";
 
 interface Agent {
   id: string;
@@ -199,14 +200,16 @@ export default function UnifiedChatPage() {
     <Layout currentPage="Chat">
       <div className="flex flex-col h-full max-h-screen overflow-hidden">
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+        <div className="flex-shrink-0 flex items-center justify-between border-b border-border pb-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg">
-              <Sparkles size={20} className="text-purple-400" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Sparkles size={20} className="text-primary" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">Unified Chat</h2>
-              <p className="text-xs text-gray-400">
+              <h2 className="text-xl font-bold text-foreground">
+                Unified Chat
+              </h2>
+              <p className="text-xs text-muted-foreground">
                 Chat with all your agents in one place
               </p>
             </div>
@@ -239,7 +242,7 @@ export default function UnifiedChatPage() {
             {agents.slice(0, 6).map((agent) => (
               <div
                 key={agent.id}
-                className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-purple-500/50 transition-all cursor-pointer flex-shrink-0"
+                className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border hover:border-primary/50 hover:bg-accent transition-all cursor-pointer flex-shrink-0"
                 onClick={() =>
                   setInputMessage(
                     (prev) =>
@@ -249,11 +252,11 @@ export default function UnifiedChatPage() {
               >
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={agent.avatar_url} />
-                  <AvatarFallback className="text-xs">
+                  <AvatarFallback className="text-xs bg-primary/20 text-primary">
                     {agent.name.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm text-gray-300">{agent.name}</span>
+                <span className="text-sm text-foreground">{agent.name}</span>
               </div>
             ))}
           </div>
@@ -261,7 +264,7 @@ export default function UnifiedChatPage() {
 
         {/* Chat Messages */}
         <div className="flex-1 min-h-0">
-          <Card className="h-full bg-slate-800/30 border-slate-700 flex flex-col">
+          <Card className="h-full bg-card border-border card-shadow flex flex-col">
             <CardContent className="flex-1 p-0 min-h-0 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="p-4 space-y-4">
@@ -290,17 +293,17 @@ export default function UnifiedChatPage() {
                                       ?.avatar_url
                                   }
                                 />
-                                <AvatarFallback className="bg-purple-500/20 text-purple-300 text-xs">
+                                <AvatarFallback className="bg-primary/20 text-primary text-xs">
                                   {message.agent_used.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </>
                             ) : (
-                              <AvatarFallback className="bg-blue-500/20 text-blue-300">
+                              <AvatarFallback className="bg-blue-500/20 text-blue-500">
                                 <Bot size={16} />
                               </AvatarFallback>
                             )
                           ) : (
-                            <AvatarFallback className="bg-purple-500/20 text-purple-300">
+                            <AvatarFallback className="bg-primary/20 text-primary">
                               <User size={16} />
                             </AvatarFallback>
                           )}
@@ -315,7 +318,7 @@ export default function UnifiedChatPage() {
                           {/* Agent indicator */}
                           {message.role === "assistant" &&
                             message.agent_used && (
-                              <div className="text-xs text-gray-400 mb-1">
+                              <div className="text-xs text-muted-foreground mb-1">
                                 <AtSign size={10} className="inline mr-1" />
                                 {message.agent_used}
                               </div>
@@ -323,11 +326,12 @@ export default function UnifiedChatPage() {
 
                           {/* Message bubble */}
                           <div
-                            className={`rounded-lg p-3 ${
+                            className={cn(
+                              "rounded-lg p-3",
                               message.role === "assistant"
-                                ? "bg-slate-800 text-gray-200"
-                                : "bg-purple-500/20 text-gray-100"
-                            }`}
+                                ? "bg-muted text-foreground"
+                                : "bg-primary/10 text-foreground border border-primary/20"
+                            )}
                           >
                             <p className="whitespace-pre-wrap">
                               {message.content}
@@ -335,20 +339,20 @@ export default function UnifiedChatPage() {
 
                             {/* Sources */}
                             {message.sources && message.sources.length > 0 && (
-                              <div className="mt-3 pt-3 border-t border-slate-700/50">
-                                <p className="text-xs text-gray-400 mb-2">
+                              <div className="mt-3 pt-3 border-t border-border">
+                                <p className="text-xs text-muted-foreground mb-2">
                                   Sources from your memories:
                                 </p>
                                 <div className="space-y-1">
                                   {message.sources.slice(0, 3).map((source) => (
                                     <div
                                       key={source.id}
-                                      className="text-xs p-2 rounded bg-slate-900/50 hover:bg-slate-900/70 transition-colors border border-slate-700/50 cursor-pointer"
+                                      className="text-xs p-2 rounded bg-secondary hover:bg-accent transition-colors border border-border cursor-pointer"
                                       onClick={() =>
                                         (window.location.href = `/memory/${source.id}`)
                                       }
                                     >
-                                      <div className="font-medium text-gray-300">
+                                      <div className="font-medium text-foreground">
                                         {source.title}
                                       </div>
                                     </div>
@@ -367,19 +371,19 @@ export default function UnifiedChatPage() {
                     <div className="flex justify-start">
                       <div className="flex gap-3">
                         <Avatar className="h-8 w-8 mt-1">
-                          <AvatarFallback className="bg-blue-500/20 text-blue-300">
+                          <AvatarFallback className="bg-blue-500/20 text-blue-500">
                             <Bot size={16} />
                           </AvatarFallback>
                         </Avatar>
-                        <div className="bg-slate-800 text-gray-200 rounded-lg p-3">
+                        <div className="bg-muted text-foreground rounded-lg p-3">
                           <div className="flex space-x-2">
-                            <div className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></div>
+                            <div className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"></div>
                             <div
-                              className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"
+                              className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"
                               style={{ animationDelay: "0.2s" }}
                             ></div>
                             <div
-                              className="h-2 w-2 bg-gray-500 rounded-full animate-bounce"
+                              className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"
                               style={{ animationDelay: "0.4s" }}
                             ></div>
                           </div>
@@ -394,29 +398,31 @@ export default function UnifiedChatPage() {
             </CardContent>
 
             {/* Input Area */}
-            <div className="flex-shrink-0 border-t border-slate-700/50 bg-slate-800/20 relative">
+            <div className="flex-shrink-0 border-t border-border bg-muted/30 relative">
               {/* Agent Suggestions Dropdown */}
               {showAgentSuggestions && (
-                <div className="absolute bottom-full left-4 right-4 mb-2 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-10">
+                <div className="absolute bottom-full left-4 right-4 mb-2 bg-popover border border-border rounded-lg card-shadow-lg z-10">
                   <div className="p-2">
-                    <div className="text-xs text-gray-400 mb-2">
+                    <div className="text-xs text-muted-foreground mb-2">
                       Available agents:
                     </div>
                     {agents.map((agent) => (
                       <div
                         key={agent.id}
-                        className="flex items-center gap-2 p-2 hover:bg-slate-700 rounded cursor-pointer"
+                        className="flex items-center gap-2 p-2 hover:bg-accent rounded cursor-pointer"
                         onClick={() => insertAgentMention(agent.name)}
                       >
                         <Avatar className="h-6 w-6">
                           <AvatarImage src={agent.avatar_url} />
-                          <AvatarFallback className="text-xs">
+                          <AvatarFallback className="text-xs bg-primary/20 text-primary">
                             {agent.name.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="text-sm text-white">{agent.name}</div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-sm text-foreground">
+                            {agent.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
                             {agent.description}
                           </div>
                         </div>
@@ -432,7 +438,12 @@ export default function UnifiedChatPage() {
                     <textarea
                       ref={textareaRef}
                       placeholder="Ask anything... Use @agent-name to mention specific agents"
-                      className="w-full min-h-[44px] max-h-[120px] px-4 py-3 pr-12 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                      className={cn(
+                        "w-full min-h-[44px] max-h-[120px] px-4 py-3 pr-12",
+                        "bg-background border border-border rounded-lg",
+                        "text-foreground placeholder:text-muted-foreground",
+                        "resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                      )}
                       value={inputMessage}
                       onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
@@ -441,7 +452,7 @@ export default function UnifiedChatPage() {
 
                     {/* Mention indicator */}
                     {inputMessage.includes("@") && (
-                      <div className="absolute right-12 top-1/2 -translate-y-1/2 text-purple-400">
+                      <div className="absolute right-12 top-1/2 -translate-y-1/2 text-primary">
                         <AtSign size={14} />
                       </div>
                     )}
@@ -449,14 +460,14 @@ export default function UnifiedChatPage() {
 
                   <Button
                     size="icon"
-                    className="bg-purple-500 text-white hover:bg-purple-600 disabled:opacity-50 h-11 w-11"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 h-11 w-11"
                     onClick={sendMessage}
                     disabled={
                       !inputMessage.trim() || isLoading || isEmbeddingLoading
                     }
                   >
                     {isLoading || isEmbeddingLoading ? (
-                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
                     ) : (
                       <Send size={18} />
                     )}
@@ -464,18 +475,20 @@ export default function UnifiedChatPage() {
                 </div>
 
                 {/* Helper text */}
-                <div className="mt-2 text-xs text-gray-500 text-center">
+                <div className="mt-2 text-xs text-muted-foreground text-center">
                   {isEmbeddingLoading ? (
-                    <span className="text-yellow-400">
+                    <span className="text-amber-600 dark:text-amber-400">
                       Generating embedding...
                     </span>
                   ) : isLoading ? (
-                    <span className="text-blue-400">AI is thinking...</span>
+                    <span className="text-blue-600 dark:text-blue-400">
+                      AI is thinking...
+                    </span>
                   ) : (
                     <>
-                      Type <span className="text-purple-400">@agent-name</span>{" "}
-                      to mention specific agents •
-                      <span className="text-gray-400">
+                      Type <span className="text-primary">@agent-name</span> to
+                      mention specific agents •
+                      <span className="text-muted-foreground">
                         {" "}
                         Press Enter to send
                       </span>

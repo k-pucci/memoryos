@@ -1,13 +1,16 @@
+// src/app/new-memory/page.tsx
+
 "use client";
 
 import React, { useState } from "react";
 import Layout from "@/components/layout";
-import { Plus, ArrowRight, Loader2 } from "lucide-react";
+import { Plus, ArrowRight, Loader2, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { useEmbeddings } from "@/hooks/useEmbeddings"; // Add this import
+import { useEmbeddings } from "@/hooks/useEmbeddings";
+import { cn } from "@/lib/utils";
 
 export default function NewMemoryPage() {
   const router = useRouter();
@@ -16,7 +19,7 @@ export default function NewMemoryPage() {
     generateEmbedding,
     isLoading: isEmbeddingLoading,
     isReady,
-  } = useEmbeddings(); // Add this hook
+  } = useEmbeddings();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -171,46 +174,48 @@ export default function NewMemoryPage() {
       <div className="space-y-6 overflow-auto max-h-[calc(100vh-130px)] pr-2 pb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <Plus className="text-purple-400 mr-2" size={22} />
-            <h1 className="text-2xl font-bold">Create New Memory</h1>
+            <Plus className="text-primary mr-2" size={22} />
+            <h1 className="text-2xl font-bold text-foreground">
+              Create New Memory
+            </h1>
           </div>
 
           {/* AI Status Indicator */}
           <div className="flex items-center gap-2 text-sm">
             {isEmbeddingLoading ? (
-              <div className="flex items-center gap-2 text-blue-400">
+              <div className="flex items-center gap-2 text-blue-500">
                 <Loader2 size={16} className="animate-spin" />
                 <span>Loading AI...</span>
               </div>
             ) : isReady ? (
-              <div className="flex items-center gap-2 text-green-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
                 <span>AI Ready</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-gray-400">
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
                 <span>AI Initializing</span>
               </div>
             )}
           </div>
         </div>
 
-        <p className="text-gray-300 mb-6">
+        <p className="text-muted-foreground mb-6">
           Capture and store your knowledge in your personal memory system with
           AI-powered search.
           {!isReady && (
-            <span className="text-yellow-400 ml-2">
+            <span className="text-amber-600 dark:text-amber-400 ml-2">
               (AI features loading...)
             </span>
           )}
         </p>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card border-border card-shadow">
           <CardContent className="p-6">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Memory Title
                 </label>
                 <Input
@@ -218,12 +223,12 @@ export default function NewMemoryPage() {
                   value={formData.title}
                   onChange={handleInputChange}
                   placeholder="Enter a descriptive title..."
-                  className="bg-slate-900/70 border-slate-700 text-white"
+                  className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Category
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -239,11 +244,12 @@ export default function NewMemoryPage() {
                       key={index}
                       type="button"
                       onClick={() => handleCategorySelect(category)}
-                      className={`px-3 py-1.5 rounded-full text-sm ${
+                      className={cn(
+                        "px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer",
                         selectedCategory === category
-                          ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                          : "bg-slate-800/50 text-gray-300 border border-slate-700 hover:bg-slate-700/50 transition-all"
-                      } cursor-pointer`}
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted text-muted-foreground border border-border hover:bg-accent hover:text-accent-foreground"
+                      )}
                     >
                       {category}
                     </button>
@@ -252,10 +258,10 @@ export default function NewMemoryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Memory Type
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
                     { icon: "📝", name: "Note" },
                     { icon: "🔗", name: "Link" },
@@ -268,11 +274,12 @@ export default function NewMemoryPage() {
                       key={index}
                       type="button"
                       onClick={() => handleTypeSelect(type.name)}
-                      className={`flex items-center gap-2 p-3 rounded-xl text-sm ${
+                      className={cn(
+                        "flex items-center gap-2 p-3 rounded-lg text-sm font-medium transition-all cursor-pointer",
                         selectedType === type.name
-                          ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                          : "bg-slate-800/50 text-gray-300 border border-slate-700 hover:bg-slate-700/50 transition-all"
-                      } cursor-pointer`}
+                          ? "bg-primary/10 text-primary border border-primary/20"
+                          : "bg-muted text-muted-foreground border border-border hover:bg-accent hover:text-accent-foreground"
+                      )}
                     >
                       <span className="text-lg">{type.icon}</span>
                       <span>{type.name}</span>
@@ -282,7 +289,7 @@ export default function NewMemoryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Content
                 </label>
                 <textarea
@@ -290,12 +297,17 @@ export default function NewMemoryPage() {
                   value={formData.content}
                   onChange={handleInputChange}
                   placeholder="Write your memory content..."
-                  className="w-full h-40 px-3 py-2 bg-slate-900/70 border border-slate-700 rounded-xl text-white focus:border-purple-500 focus:ring focus:ring-purple-500/20 transition-all resize-none"
+                  className={cn(
+                    "w-full h-40 px-3 py-2 rounded-lg resize-none",
+                    "bg-background border border-border text-foreground",
+                    "placeholder:text-muted-foreground",
+                    "focus:border-primary focus:ring focus:ring-primary/20 transition-all"
+                  )}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-2">
                   Tags
                 </label>
                 <div className="flex gap-2">
@@ -305,47 +317,51 @@ export default function NewMemoryPage() {
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Add tags separated by commas..."
-                    className="bg-slate-900/70 border-slate-700 text-white"
+                    className="bg-background border-border text-foreground placeholder:text-muted-foreground"
                   />
                   <button
                     type="button"
                     onClick={handleAddTag}
-                    className="px-3 bg-slate-700 rounded-md text-white hover:bg-slate-600"
+                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                   >
                     Add
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-3">
                   {tagsList.map((tag, index) => (
                     <span
                       key={index}
-                      className="px-2 py-1 bg-slate-800 text-xs text-gray-300 rounded-full flex items-center"
+                      className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full flex items-center gap-1 border border-primary/20"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 text-gray-400 hover:text-gray-200 cursor-pointer"
+                        className="text-primary/70 hover:text-primary transition-colors"
                       >
-                        ×
+                        <X size={14} />
                       </button>
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-between items-center">
+              <div className="pt-4 flex justify-between items-center border-t border-border">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
                     id="reminder"
                     checked={formData.has_reminder}
                     onChange={handleReminderChange}
-                    className="w-4 h-4 bg-slate-800 border-slate-700 rounded text-purple-500 focus:ring-purple-500/20"
+                    className={cn(
+                      "w-4 h-4 rounded text-primary",
+                      "bg-background border-border",
+                      "focus:ring-primary/20 focus:ring-2"
+                    )}
                   />
                   <label
                     htmlFor="reminder"
-                    className="ml-2 text-sm text-gray-300"
+                    className="ml-2 text-sm text-foreground"
                   >
                     Set reminder
                   </label>
@@ -353,7 +369,7 @@ export default function NewMemoryPage() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    className="px-4 py-2 border border-slate-700 rounded-lg text-gray-300 hover:bg-slate-800 transition-all cursor-pointer"
+                    className="px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all cursor-pointer"
                     onClick={() => router.push("/memory-stack")}
                   >
                     Cancel
@@ -362,7 +378,7 @@ export default function NewMemoryPage() {
                     type="button"
                     onClick={handleCreateMemory}
                     disabled={isSubmitting}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all flex items-center cursor-pointer disabled:opacity-50"
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-2 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all flex items-center cursor-pointer disabled:opacity-50 font-medium"
                   >
                     {isSubmitting ? (
                       <>

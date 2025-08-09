@@ -1,12 +1,24 @@
+// src/app/memory/[id]/page.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Layout from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
-import { Loader2, Edit, Trash2, ArrowLeft, Save, ExternalLink, Tag } from "lucide-react";
+import {
+  Loader2,
+  Edit,
+  Trash2,
+  ArrowLeft,
+  Save,
+  ExternalLink,
+  Tag,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Memory {
   id: string;
@@ -31,18 +43,38 @@ interface RelatedMemory {
   similarity: number;
 }
 
+// Helper function to get memory type styling
+const getMemoryTypeClasses = (type: string) => {
+  const typeKey = type.toLowerCase().replace(/\s+/g, "-");
+  return {
+    text: `memory-${typeKey}`,
+    bg: `memory-${typeKey}-bg`,
+    border: `memory-${typeKey}-border`,
+  };
+};
+
+// Helper function to get category styling
+const getCategoryClasses = (category: string) => {
+  const categoryKey = category.toLowerCase().replace(/\s+/g, "-");
+  return {
+    text: `memory-${categoryKey}`,
+    bg: `memory-${categoryKey}-bg`,
+    border: `memory-${categoryKey}-border`,
+  };
+};
+
 export default function MemoryDetailPage() {
   const router = useRouter();
   const params = useParams();
   const memoryId = params?.id as string;
-  
+
   const [memory, setMemory] = useState<Memory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-  
+
   // Form state for editing
   const [editForm, setEditForm] = useState({
     title: "",
@@ -51,9 +83,9 @@ export default function MemoryDetailPage() {
     content: "",
     tags: "",
     source_url: "",
-    has_reminder: false
+    has_reminder: false,
   });
-  
+
   // Related memories
   const [relatedMemories, setRelatedMemories] = useState<RelatedMemory[]>([]);
   const [isLoadingRelated, setIsLoadingRelated] = useState(false);
@@ -61,19 +93,19 @@ export default function MemoryDetailPage() {
   // Fetch memory data on mount
   useEffect(() => {
     if (!memoryId) return;
-    
+
     async function fetchMemory() {
       try {
         setIsLoading(true);
         const response = await fetch(`/api/memories/${memoryId}`);
-        
+
         if (!response.ok) {
           throw new Error("Failed to fetch memory");
         }
-        
+
         const data = await response.json();
         setMemory(data);
-        
+
         // Initialize form data
         setEditForm({
           title: data.title,
@@ -82,9 +114,9 @@ export default function MemoryDetailPage() {
           content: data.content,
           tags: data.tags?.join(", ") || "",
           source_url: data.source_url || "",
-          has_reminder: data.has_reminder || false
+          has_reminder: data.has_reminder || false,
         });
-        
+
         // Fetch related memories
         fetchRelatedMemories(data.content);
       } catch (error: any) {
@@ -94,10 +126,10 @@ export default function MemoryDetailPage() {
         setIsLoading(false);
       }
     }
-    
+
     fetchMemory();
   }, [memoryId]);
-  
+
   // Fetch related memories based on content
   const fetchRelatedMemories = async (content: string) => {
     try {
@@ -105,20 +137,20 @@ export default function MemoryDetailPage() {
       const response = await fetch("/api/memories/search", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           query: content.substring(0, 300), // Use first 300 chars to find related content
           limit: 3,
           // Exclude current memory
-          exclude_ids: [memoryId]
-        })
+          exclude_ids: [memoryId],
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch related memories");
       }
-      
+
       const data = await response.json();
       setRelatedMemories(data.results || []);
     } catch (error: any) {
@@ -127,53 +159,57 @@ export default function MemoryDetailPage() {
       setIsLoadingRelated(false);
     }
   };
-  
+
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   // Handle checkbox changes
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: checked }));
+    setEditForm((prev) => ({ ...prev, [name]: checked }));
   };
-  
+
   // Handle form submission (update memory)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setIsSaving(true);
-      
+
       // Parse tags
       const parsedTags = editForm.tags
         .split(",")
-        .map(tag => tag.trim())
-        .filter(tag => tag);
-      
+        .map((tag) => tag.trim())
+        .filter((tag) => tag);
+
       const response = await fetch(`/api/memories/${memoryId}`, {
         method: "PUT",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ...editForm,
-          tags: parsedTags
-        })
+          tags: parsedTags,
+        }),
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to update memory");
       }
-      
+
       const result = await response.json();
-      
+
       // Fetch updated memory
       const updatedMemoryResponse = await fetch(`/api/memories/${memoryId}`);
       const updatedMemory = await updatedMemoryResponse.json();
-      
+
       setMemory(updatedMemory);
       setIsEditing(false);
       alert("Memory updated successfully");
@@ -184,24 +220,28 @@ export default function MemoryDetailPage() {
       setIsSaving(false);
     }
   };
-  
+
   // Handle memory deletion
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this memory? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this memory? This action cannot be undone."
+      )
+    ) {
       return;
     }
-    
+
     try {
       setIsDeleting(true);
-      
+
       const response = await fetch(`/api/memories/${memoryId}`, {
-        method: "DELETE"
+        method: "DELETE",
       });
-      
+
       if (!response.ok) {
         throw new Error("Failed to delete memory");
       }
-      
+
       alert("Memory deleted successfully");
       router.push("/memory-stack");
     } catch (error: any) {
@@ -210,47 +250,45 @@ export default function MemoryDetailPage() {
       setIsDeleting(false);
     }
   };
-  
+
   // Go back to previous page
   const goBack = () => {
     router.back();
   };
-  
+
   if (isLoading) {
     return (
       <Layout currentPage="">
         <div className="flex items-center justify-center h-[80vh]">
-          <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       </Layout>
     );
   }
-  
+
   if (error || !memory) {
     return (
       <Layout currentPage="">
         <div className="space-y-4">
           <div className="flex items-center">
-            <button 
-              onClick={goBack}
-              className="flex items-center gap-2 text-gray-400 hover:text-white"
-            >
+            <Button variant="ghost" onClick={goBack} className="gap-2">
               <ArrowLeft size={16} />
               <span>Back</span>
-            </button>
+            </Button>
           </div>
-          
-          <Card className="bg-slate-800/50 border-slate-700">
+
+          <Card className="card-shadow">
             <CardContent className="p-6">
               <div className="text-center py-8">
-                <h2 className="text-xl font-medium text-red-400 mb-2">Error</h2>
-                <p className="text-gray-300">{error || "Memory not found"}</p>
-                <button 
-                  onClick={goBack}
-                  className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white"
-                >
+                <h2 className="text-xl font-medium text-destructive mb-2">
+                  Error
+                </h2>
+                <p className="text-muted-foreground">
+                  {error || "Memory not found"}
+                </p>
+                <Button onClick={goBack} className="mt-4">
                   Go Back
-                </button>
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -258,33 +296,35 @@ export default function MemoryDetailPage() {
       </Layout>
     );
   }
-  
+
+  const categoryClasses = getCategoryClasses(memory.category);
+  const typeClasses = getMemoryTypeClasses(memory.memory_type);
+
   return (
     <Layout currentPage="">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <button 
-            onClick={goBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white"
-          >
+          <Button variant="ghost" onClick={goBack} className="gap-2">
             <ArrowLeft size={16} />
             <span>Back</span>
-          </button>
-          
+          </Button>
+
           <div className="flex gap-2">
             {!isEditing ? (
               <>
-                <button 
+                <Button
+                  variant="outline"
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg text-gray-300 hover:bg-slate-700/50"
+                  className="gap-2"
                 >
                   <Edit size={16} />
                   <span>Edit</span>
-                </button>
-                
-                <button 
+                </Button>
+
+                <Button
+                  variant="destructive"
                   onClick={handleDelete}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg text-red-400 hover:bg-red-500/10"
+                  className="gap-2"
                   disabled={isDeleting}
                 >
                   {isDeleting ? (
@@ -293,20 +333,17 @@ export default function MemoryDetailPage() {
                     <Trash2 size={16} />
                   )}
                   <span>Delete</span>
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 border border-slate-700 rounded-lg text-gray-300 hover:bg-slate-700/50"
-                >
-                  <span>Cancel</span>
-                </button>
-                
-                <button 
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  Cancel
+                </Button>
+
+                <Button
                   onClick={handleSubmit}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white"
+                  className="gap-2"
                   disabled={isSaving}
                 >
                   {isSaving ? (
@@ -315,36 +352,39 @@ export default function MemoryDetailPage() {
                     <Save size={16} />
                   )}
                   <span>Save</span>
-                </button>
+                </Button>
               </>
             )}
           </div>
         </div>
-        
+
         {/* Memory Content */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="card-shadow">
           <CardContent className="p-6">
             {isEditing ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Title
+                  </label>
                   <Input
                     name="title"
                     value={editForm.title}
                     onChange={handleInputChange}
-                    className="bg-slate-900/70 border-slate-700 text-white"
                     required
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Category
+                    </label>
                     <select
                       name="category"
                       value={editForm.category}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 bg-slate-900/70 border border-slate-700 rounded-md text-white"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       required
                     >
                       <option value="Research">Research</option>
@@ -355,14 +395,16 @@ export default function MemoryDetailPage() {
                       <option value="Task">Task</option>
                     </select>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-1">Memory Type</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">
+                      Memory Type
+                    </label>
                     <select
                       name="memory_type"
                       value={editForm.memory_type}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 bg-slate-900/70 border border-slate-700 rounded-md text-white"
+                      className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       required
                     >
                       <option value="Note">Note</option>
@@ -374,38 +416,42 @@ export default function MemoryDetailPage() {
                     </select>
                   </div>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Content</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Content
+                  </label>
                   <textarea
                     name="content"
                     value={editForm.content}
                     onChange={handleInputChange}
-                    className="w-full h-48 px-3 py-2 bg-slate-900/70 border border-slate-700 rounded-md text-white resize-none"
+                    className="w-full h-48 px-3 py-2 bg-input border border-border rounded-md text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Tags (comma separated)</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Tags (comma separated)
+                  </label>
                   <Input
                     name="tags"
                     value={editForm.tags}
                     onChange={handleInputChange}
-                    className="bg-slate-900/70 border-slate-700 text-white"
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Source URL (optional)</label>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Source URL (optional)
+                  </label>
                   <Input
                     name="source_url"
                     value={editForm.source_url}
                     onChange={handleInputChange}
-                    className="bg-slate-900/70 border-slate-700 text-white"
                   />
                 </div>
-                
+
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -413,9 +459,12 @@ export default function MemoryDetailPage() {
                     name="has_reminder"
                     checked={editForm.has_reminder}
                     onChange={handleCheckboxChange}
-                    className="w-4 h-4 bg-slate-700 border-slate-600 rounded text-purple-500"
+                    className="w-4 h-4 bg-input border-border rounded text-primary focus:ring-ring"
                   />
-                  <label htmlFor="has_reminder" className="ml-2 text-sm text-gray-300">
+                  <label
+                    htmlFor="has_reminder"
+                    className="ml-2 text-sm text-foreground"
+                  >
                     Set reminder
                   </label>
                 </div>
@@ -423,51 +472,77 @@ export default function MemoryDetailPage() {
             ) : (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">{memory.title}</h1>
-                  <div className="flex items-center text-sm text-gray-400 mt-2">
-                    <span className="bg-slate-700/50 px-2 py-1 rounded text-purple-300">
+                  <h1 className="text-2xl font-bold text-foreground">
+                    {memory.title}
+                  </h1>
+                  <div className="flex items-center text-sm text-muted-foreground mt-2 gap-2">
+                    <span
+                      className={cn(
+                        "px-2 py-1 rounded text-xs font-medium",
+                        categoryClasses.bg,
+                        categoryClasses.text
+                      )}
+                    >
                       {memory.category}
                     </span>
-                    <span className="mx-2">•</span>
-                    <span>{memory.memory_type}</span>
-                    <span className="mx-2">•</span>
-                    <span>Created {formatDistanceToNow(new Date(memory.created_at), { addSuffix: true })}</span>
+                    <span>•</span>
+                    <span
+                      className={cn(
+                        "px-2 py-1 rounded text-xs font-medium",
+                        typeClasses.bg,
+                        typeClasses.text
+                      )}
+                    >
+                      {memory.memory_type}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Created{" "}
+                      {formatDistanceToNow(new Date(memory.created_at), {
+                        addSuffix: true,
+                      })}
+                    </span>
                     {memory.updated_at !== memory.created_at && (
                       <>
-                        <span className="mx-2">•</span>
-                        <span>Updated {formatDistanceToNow(new Date(memory.updated_at), { addSuffix: true })}</span>
+                        <span>•</span>
+                        <span>
+                          Updated{" "}
+                          {formatDistanceToNow(new Date(memory.updated_at), {
+                            addSuffix: true,
+                          })}
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
-                
+
                 {memory.source_url && (
                   <div className="flex items-center">
                     <a
                       href={memory.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors text-sm"
+                      className="text-primary hover:text-primary/80 flex items-center gap-1 transition-colors text-sm"
                     >
                       <ExternalLink size={14} />
                       <span>Source</span>
                     </a>
                   </div>
                 )}
-                
-                <div className="py-4 border-t border-b border-slate-700/50">
-                  <div className="whitespace-pre-wrap text-gray-200">
+
+                <div className="py-4 border-t border-b border-border">
+                  <div className="whitespace-pre-wrap text-foreground">
                     {memory.content}
                   </div>
                 </div>
-                
+
                 {memory.tags && memory.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    <Tag size={14} className="text-gray-400" />
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Tag size={14} className="text-muted-foreground" />
                     {memory.tags.map((tag, index) => (
-                      <span 
+                      <span
                         key={index}
-                        className="px-2 py-1 bg-slate-700/50 text-xs text-gray-300 rounded-full"
+                        className="px-2 py-1 bg-muted text-xs text-muted-foreground rounded-full"
                       >
                         {tag}
                       </span>
@@ -478,39 +553,61 @@ export default function MemoryDetailPage() {
             )}
           </CardContent>
         </Card>
-        
+
         {/* Related Memories */}
         {!isEditing && (
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-200">Related Memories</h3>
-            
+            <h3 className="text-lg font-medium text-foreground">
+              Related Memories
+            </h3>
+
             {isLoadingRelated ? (
               <div className="flex justify-center py-6">
-                <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
               </div>
             ) : relatedMemories.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {relatedMemories.map((relatedMemory) => (
-                  <Card 
-                    key={relatedMemory.id}
-                    className="bg-slate-800/30 border-slate-700 hover:border-purple-500/30 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/memory/${relatedMemory.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <h4 className="font-medium text-white mb-1">{relatedMemory.title}</h4>
-                      <p className="text-sm text-gray-400 line-clamp-2">
-                        {relatedMemory.summary || relatedMemory.content.substring(0, 100) + '...'}
-                      </p>
-                      <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                        <span>{relatedMemory.category}</span>
-                        <span>Similarity: {Math.round(relatedMemory.similarity * 100)}%</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {relatedMemories.map((relatedMemory) => {
+                  const relatedCategoryClasses = getCategoryClasses(
+                    relatedMemory.category
+                  );
+                  return (
+                    <Card
+                      key={relatedMemory.id}
+                      className="card-shadow hover:border-primary/50 transition-colors cursor-pointer"
+                      onClick={() => router.push(`/memory/${relatedMemory.id}`)}
+                    >
+                      <CardContent className="p-4">
+                        <h4 className="font-medium text-foreground mb-1">
+                          {relatedMemory.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {relatedMemory.summary ||
+                            relatedMemory.content.substring(0, 100) + "..."}
+                        </p>
+                        <div className="flex justify-between items-center mt-2 text-xs">
+                          <span
+                            className={cn(
+                              "px-2 py-1 rounded font-medium",
+                              relatedCategoryClasses.bg,
+                              relatedCategoryClasses.text
+                            )}
+                          >
+                            {relatedMemory.category}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {Math.round(relatedMemory.similarity * 100)}% match
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-gray-400 text-center py-4">No related memories found</p>
+              <p className="text-muted-foreground text-center py-4">
+                No related memories found
+              </p>
             )}
           </div>
         )}

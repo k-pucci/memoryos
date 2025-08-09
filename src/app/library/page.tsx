@@ -1,10 +1,10 @@
+// /src/app/library/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   BookOpen,
   Search,
@@ -13,6 +13,18 @@ import {
   Loader2,
   Plus,
   X,
+  Edit,
+  Globe,
+  FileText,
+  Calendar,
+  Archive,
+  Lightbulb,
+  CheckSquare,
+  BarChart3,
+  Puzzle,
+  Rocket,
+  GraduationCap,
+  Microscope,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -31,6 +43,56 @@ interface Memory {
   created_at: string;
   updated_at: string;
 }
+
+// Memory type to icon mapping
+const getMemoryTypeIcon = (memoryType: string) => {
+  const iconMap: { [key: string]: React.ReactNode } = {
+    note: <Edit size={14} />,
+    document: <FileText size={14} />,
+    link: <Globe size={14} />,
+    analysis: <BarChart3 size={14} />,
+    concept: <Puzzle size={14} />,
+    event: <Calendar size={14} />,
+    research: <Microscope size={14} />,
+    product: <Rocket size={14} />,
+    meeting: <Calendar size={14} />,
+    learning: <GraduationCap size={14} />,
+    idea: <Lightbulb size={14} />,
+    task: <CheckSquare size={14} />,
+  };
+
+  return iconMap[memoryType.toLowerCase()] || <Archive size={14} />;
+};
+
+// Get memory type CSS class name
+const getMemoryTypeClass = (memoryType: string, category: string) => {
+  const type = memoryType.toLowerCase();
+  const cat = category.toLowerCase();
+
+  // Check if we have a specific memory type class
+  const memoryTypes = [
+    "research",
+    "product",
+    "meeting",
+    "learning",
+    "idea",
+    "task",
+    "note",
+    "document",
+    "link",
+    "analysis",
+    "concept",
+    "event",
+  ];
+
+  if (memoryTypes.includes(type)) {
+    return `memory-${type}`;
+  } else if (memoryTypes.includes(cat)) {
+    return `memory-${cat}`;
+  }
+
+  return "memory-note"; // fallback
+};
 
 export default function LibraryPage() {
   const router = useRouter();
@@ -142,55 +204,11 @@ export default function LibraryPage() {
     setSelectedCategory(category);
   };
 
-  const getMemoryTypeColor = (memoryType: string, category: string) => {
-    // Color mapping based on memory type and category
-    const colorMap: { [key: string]: string } = {
-      research: "blue",
-      product: "purple",
-      meeting: "emerald",
-      learning: "amber",
-      idea: "pink",
-      task: "indigo",
-      note: "cyan",
-      document: "green",
-      link: "orange",
-      analysis: "violet",
-      concept: "teal",
-      event: "rose",
-    };
-
-    return (
-      colorMap[memoryType.toLowerCase()] ||
-      colorMap[category.toLowerCase()] ||
-      "gray"
-    );
-  };
-
-  const getTypeIcon = (memoryType: string) => {
-    const iconMap: { [key: string]: string } = {
-      note: "📝",
-      document: "📄",
-      link: "🔗",
-      analysis: "📊",
-      concept: "🧩",
-      event: "📅",
-      research: "🔬",
-      product: "🚀",
-      meeting: "📅",
-      learning: "🎓",
-      idea: "💡",
-      task: "✅",
-    };
-
-    return iconMap[memoryType.toLowerCase()] || "📋";
-  };
-
   // Group memories by recency
   const groupMemoriesByRecency = (memories: Memory[]) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thisMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const recentMemories = memories.filter(
       (memory) => new Date(memory.created_at) >= thisWeek
@@ -207,7 +225,7 @@ export default function LibraryPage() {
     return (
       <Layout currentPage="Library">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       </Layout>
     );
@@ -218,10 +236,10 @@ export default function LibraryPage() {
       <Layout currentPage="Library">
         <div className="space-y-6 p-4">
           <div className="flex items-center">
-            <BookOpen className="text-purple-400 mr-2" size={22} />
+            <BookOpen className="text-primary mr-2" size={22} />
             <h1 className="text-2xl font-bold">Library</h1>
           </div>
-          <div className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
+          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
             {error}
           </div>
         </div>
@@ -236,16 +254,16 @@ export default function LibraryPage() {
     <Layout currentPage="Library">
       <div className="flex flex-col h-full max-h-screen overflow-hidden">
         {/* Fixed Header Section */}
-        <div className="flex-shrink-0 space-y-4 p-4 pb-0 md:space-y-6 md:p-6 md:pb-0">
+        <div className="flex-shrink-0 space-y-6 p-6 pb-0">
           {/* Title and Add Button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <BookOpen className="text-purple-400 mr-2" size={22} />
+              <BookOpen className="text-primary mr-3" size={24} />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold">
+                <h1 className="text-2xl font-bold text-foreground">
                   Memory Library
                 </h1>
-                <p className="text-gray-400 text-xs md:text-sm">
+                <p className="text-muted-foreground text-sm mt-1">
                   Access your collected knowledge and memories
                 </p>
               </div>
@@ -253,29 +271,28 @@ export default function LibraryPage() {
 
             <button
               onClick={() => router.push("/new-memory")}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-3 py-2 md:px-4 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer flex items-center text-sm"
+              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer flex items-center text-sm font-medium"
             >
-              <Plus size={14} className="mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Add Memory</span>
-              <span className="sm:hidden">Add</span>
+              <Plus size={16} className="mr-2" />
+              Add Memory
             </button>
           </div>
 
           {/* Search */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-gray-400" />
+              <Search size={18} className="text-muted-foreground" />
             </div>
             <Input
               ref={searchInputRef}
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search your memories..."
-              className="bg-slate-800/50 border-slate-700 text-white pl-10 h-10 md:h-12 rounded-xl focus:border-purple-500 focus:ring focus:ring-purple-500/20 transition-all"
+              className="bg-card border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all card-shadow"
             />
             {searchQuery && (
               <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 onClick={clearSearch}
               >
                 <X size={18} />
@@ -289,10 +306,10 @@ export default function LibraryPage() {
               <button
                 key={index}
                 onClick={() => handleCategorySelect(category)}
-                className={`px-2 py-1 md:px-3 md:py-1.5 rounded-full text-xs md:text-sm transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
                   selectedCategory === category
-                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                    : "bg-slate-800/50 text-gray-300 border border-slate-700 hover:bg-slate-700/50"
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 {category}
@@ -301,8 +318,8 @@ export default function LibraryPage() {
           </div>
 
           {/* Results count */}
-          {searchQuery && (
-            <p className="text-gray-400 text-xs md:text-sm">
+          {(searchQuery || selectedCategory !== "All") && (
+            <p className="text-muted-foreground text-sm">
               Found {filteredMemories.length}{" "}
               {filteredMemories.length === 1 ? "memory" : "memories"}
               {searchQuery ? ` for "${searchQuery}"` : ""}
@@ -314,38 +331,38 @@ export default function LibraryPage() {
         {/* Scrollable Content Area */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <ScrollArea className="h-full">
-            <div className="p-4 pt-2 md:p-6 md:pt-4">
+            <div className="p-6 pt-4">
               {filteredMemories.length === 0 ? (
-                <div className="text-center py-12 md:py-20 text-gray-400">
+                <div className="text-center py-20 text-muted-foreground">
                   <BookOpen
-                    size={32}
-                    className="mx-auto mb-4 text-gray-500 opacity-50 md:w-10 md:h-10"
+                    size={48}
+                    className="mx-auto mb-4 text-muted-foreground/30"
                   />
-                  <h3 className="text-lg md:text-xl font-medium mb-2">
+                  <h3 className="text-xl font-medium mb-2 text-foreground">
                     {searchQuery || selectedCategory !== "All"
                       ? "No memories found"
                       : "No memories yet"}
                   </h3>
-                  <p className="mb-4 md:mb-6 text-sm md:text-base px-4">
+                  <p className="mb-6 text-muted-foreground max-w-md mx-auto">
                     {searchQuery || selectedCategory !== "All"
                       ? "Try a different search term or category"
                       : "Start building your memory library by adding your first memory"}
                   </p>
                   <button
                     onClick={() => router.push("/new-memory")}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer text-sm"
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer font-medium"
                   >
                     Add Your First Memory
                   </button>
                 </div>
               ) : (
-                <div className="space-y-6 md:space-y-8">
+                <div className="space-y-8">
                   {recentMemories.length > 0 && (
                     <div>
-                      <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4">
+                      <h2 className="text-lg font-semibold mb-4 text-foreground">
                         Recent Memories
                       </h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {recentMemories.map((memory) => (
                           <MemoryCard
                             key={memory.id}
@@ -359,10 +376,12 @@ export default function LibraryPage() {
 
                   {olderMemories.length > 0 && (
                     <div>
-                      <h2 className="text-lg md:text-xl font-bold mb-3 md:mb-4">
-                        All Memories
+                      <h2 className="text-lg font-semibold mb-4 text-foreground">
+                        {recentMemories.length > 0
+                          ? "Earlier Memories"
+                          : "All Memories"}
                       </h2>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {olderMemories.map((memory) => (
                           <MemoryCard
                             key={memory.id}
@@ -390,40 +409,44 @@ interface MemoryCardProps {
 }
 
 function MemoryCard({ memory, onView }: MemoryCardProps) {
-  const color = getMemoryTypeColor(memory.memory_type, memory.category);
-  const icon = getTypeIcon(memory.memory_type);
+  const memoryClass = getMemoryTypeClass(memory.memory_type, memory.category);
+  const icon = getMemoryTypeIcon(memory.memory_type);
   const displayContent =
     memory.summary ||
-    memory.content.substring(0, 100) +
-      (memory.content.length > 100 ? "..." : "");
+    memory.content.substring(0, 120) +
+      (memory.content.length > 120 ? "..." : "");
 
   return (
     <Card
-      className="bg-slate-800/50 border-slate-700 overflow-hidden relative group hover:shadow-lg hover:border-purple-500/30 transition-all cursor-pointer h-fit"
+      className="bg-card border-border overflow-hidden relative group hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer card-shadow hover:card-shadow-lg"
       onClick={onView}
     >
-      <div className={`absolute top-0 left-0 w-full h-1 bg-${color}-500`}></div>
-      <CardContent className="p-3 md:p-4 pt-4 md:pt-5">
-        <div className="flex justify-between items-start mb-2">
+      {/* Top accent line */}
+      <div
+        className={`absolute top-0 left-0 w-full h-1 ${memoryClass}-bg opacity-60`}
+      ></div>
+
+      <CardContent className="p-4 pt-5">
+        <div className="flex justify-between items-start mb-3">
           <div className="flex items-center space-x-2">
-            <span className="text-xs md:text-sm">{icon}</span>
+            <div className={`${memoryClass} opacity-70`}>{icon}</div>
             <span
-              className={`px-1.5 py-0.5 md:px-2 rounded-full text-xs bg-${color}-500/20 text-${color}-300`}
+              className={`px-2 py-1 rounded-full text-xs font-medium ${memoryClass}-bg ${memoryClass}`}
             >
               {memory.memory_type}
             </span>
           </div>
-          <button className="text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
-            <ArrowUpRight size={14} className="md:w-4 md:h-4" />
+          <button className="text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
+            <ArrowUpRight size={16} />
           </button>
         </div>
 
-        <h3 className="font-bold text-white mb-2 line-clamp-2 text-sm md:text-base">
+        <h3 className="font-semibold text-foreground mb-2 line-clamp-2 text-base leading-tight">
           {memory.title}
         </h3>
 
         {displayContent && (
-          <p className="text-xs md:text-sm text-gray-300 mb-3 line-clamp-3 md:line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
             {displayContent}
           </p>
         )}
@@ -433,28 +456,28 @@ function MemoryCard({ memory, onView }: MemoryCardProps) {
             {memory.tags.slice(0, 3).map((tag, index) => (
               <span
                 key={index}
-                className="px-1.5 py-0.5 bg-slate-700 text-xs text-gray-300 rounded"
+                className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-md font-medium"
               >
                 {tag}
               </span>
             ))}
             {memory.tags.length > 3 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground font-medium">
                 +{memory.tags.length - 3}
               </span>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between text-xs text-gray-400">
+        <div className="flex items-center justify-between text-xs">
           <span
-            className={`px-2 py-1 rounded-full bg-${color}-500/10 text-${color}-300 text-xs`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${memoryClass}-bg ${memoryClass} opacity-80`}
           >
             {memory.category}
           </span>
-          <div className="flex items-center">
-            <Clock size={10} className="mr-1" />
-            <span className="text-xs">
+          <div className="flex items-center text-muted-foreground">
+            <Clock size={12} className="mr-1" />
+            <span>
               {formatDistanceToNow(new Date(memory.created_at), {
                 addSuffix: true,
               })}
@@ -464,47 +487,4 @@ function MemoryCard({ memory, onView }: MemoryCardProps) {
       </CardContent>
     </Card>
   );
-}
-
-// Helper functions
-function getMemoryTypeColor(memoryType: string, category: string) {
-  const colorMap: { [key: string]: string } = {
-    research: "blue",
-    product: "purple",
-    meeting: "emerald",
-    learning: "amber",
-    idea: "pink",
-    task: "indigo",
-    note: "cyan",
-    document: "green",
-    link: "orange",
-    analysis: "violet",
-    concept: "teal",
-    event: "rose",
-  };
-
-  return (
-    colorMap[memoryType.toLowerCase()] ||
-    colorMap[category.toLowerCase()] ||
-    "gray"
-  );
-}
-
-function getTypeIcon(memoryType: string) {
-  const iconMap: { [key: string]: string } = {
-    note: "📝",
-    document: "📄",
-    link: "🔗",
-    analysis: "📊",
-    concept: "🧩",
-    event: "📅",
-    research: "🔬",
-    product: "🚀",
-    meeting: "📅",
-    learning: "🎓",
-    idea: "💡",
-    task: "✅",
-  };
-
-  return iconMap[memoryType.toLowerCase()] || "📋";
 }
