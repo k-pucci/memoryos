@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { createClient } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
+import { getCategoryIcon } from "@/components/icons/CategoryIcons";
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -63,25 +64,6 @@ interface Stats {
   recentActivity: number;
   popularTags: { tag: string; count: number }[];
 }
-
-// Helper to get proper icon for each category
-const getCategoryIcon = (category: string): string => {
-  const categoryIcons: Record<string, string> = {
-    Research: "🔬",
-    Product: "💡",
-    "User Experience": "🎨",
-    Strategy: "🎯",
-    Meeting: "👥",
-    Task: "✅",
-    Learning: "📚",
-    Idea: "💭",
-    Personal: "👤",
-    Work: "💼",
-    Project: "🚀",
-  };
-
-  return categoryIcons[category] || "📋";
-};
 
 // Get memory type class for theming
 const getMemoryTypeClass = (memoryType: string, category: string) => {
@@ -238,7 +220,7 @@ export default function HomePage() {
           {/* Welcome Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold brand-terracotta">
                 Welcome back!
               </h1>
               <p className="text-muted-foreground mt-2">
@@ -256,7 +238,7 @@ export default function HomePage() {
               </button>
               <button
                 onClick={createNewMemory}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
               >
                 <Plus size={18} />
                 <span className="hidden sm:inline">New Memory</span>
@@ -294,8 +276,8 @@ export default function HomePage() {
                       {stats.totalCategories}
                     </p>
                   </div>
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <BarChart3 size={20} className="text-blue-500" />
+                  <div className="p-2 bg-brand-coral/10 rounded-lg">
+                    <BarChart3 size={20} className="brand-coral" />
                   </div>
                 </div>
               </CardContent>
@@ -310,8 +292,8 @@ export default function HomePage() {
                       {stats.recentActivity}
                     </p>
                   </div>
-                  <div className="p-2 bg-emerald-500/10 rounded-lg">
-                    <Activity size={20} className="text-emerald-500" />
+                  <div className="p-2 bg-brand-sage/10 rounded-lg">
+                    <Activity size={20} className="brand-sage" />
                   </div>
                 </div>
               </CardContent>
@@ -328,8 +310,8 @@ export default function HomePage() {
                       {stats.popularTags.length}
                     </p>
                   </div>
-                  <div className="p-2 bg-amber-500/10 rounded-lg">
-                    <Tag size={20} className="text-amber-500" />
+                  <div className="p-2 bg-accent/10 rounded-lg">
+                    <Tag size={20} className="text-accent" />
                   </div>
                 </div>
               </CardContent>
@@ -405,7 +387,7 @@ export default function HomePage() {
                         </p>
                         <button
                           onClick={createNewMemory}
-                          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer font-medium"
+                          className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
                         >
                           Add Your First Memory
                         </button>
@@ -442,7 +424,7 @@ export default function HomePage() {
                             {stats.popularTags.map((tagData, index) => (
                               <div
                                 key={index}
-                                className="flex items-center justify-between p-2 bg-muted rounded-lg hover:bg-accent transition-all cursor-pointer"
+                                className="flex items-center justify-between p-2 bg-muted rounded-lg hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -468,7 +450,7 @@ export default function HomePage() {
                     <Card className="bg-card border-border card-shadow">
                       <CardContent className="p-4">
                         <h3 className="font-semibold mb-4 flex items-center gap-2 text-foreground">
-                          <TrendingUp size={16} className="text-emerald-500" />
+                          <TrendingUp size={16} className="brand-sage" />
                           Insights
                         </h3>
 
@@ -487,11 +469,8 @@ export default function HomePage() {
                               Weekly Growth
                             </p>
                             <div className="flex items-center gap-2">
-                              <TrendingUp
-                                size={14}
-                                className="text-emerald-500"
-                              />
-                              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                              <TrendingUp size={14} className="brand-sage" />
+                              <p className="text-sm brand-sage font-medium">
                                 +{stats.recentActivity} this week
                               </p>
                             </div>
@@ -504,14 +483,14 @@ export default function HomePage() {
                     <Card className="bg-card border-border card-shadow">
                       <CardContent className="p-4">
                         <h3 className="font-semibold mb-4 flex items-center gap-2 text-foreground">
-                          <Zap size={16} className="text-blue-500" />
+                          <Zap size={16} className="brand-coral" />
                           Explore More
                         </h3>
 
                         <div className="grid grid-cols-2 gap-3">
                           <button
                             onClick={() => router.push("/library")}
-                            className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg hover:bg-accent transition-all cursor-pointer group"
+                            className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer group"
                           >
                             <BookOpen
                               size={20}
@@ -524,7 +503,7 @@ export default function HomePage() {
 
                           <button
                             onClick={openAIAgents}
-                            className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg hover:bg-accent transition-all cursor-pointer group"
+                            className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer group"
                           >
                             <Brain
                               size={20}
@@ -559,7 +538,6 @@ function MemoryCard({
   onClick,
 }: MemoryCardProps) {
   const memoryClass = getMemoryTypeClass(memoryType, category);
-  const icon = getCategoryIcon(category);
 
   return (
     <Card
@@ -576,7 +554,9 @@ function MemoryCard({
       <CardContent className="p-4 pt-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{icon}</span>
+            <div className="flex items-center justify-center w-6 h-6">
+              {getCategoryIcon(category, 20, "text-muted-foreground")}
+            </div>
             <span
               className={cn(
                 "text-xs px-2 py-1 rounded-full font-medium",

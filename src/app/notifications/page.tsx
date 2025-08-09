@@ -22,132 +22,145 @@ import { cn } from "@/lib/utils";
 export default function NotificationsPage() {
   return (
     <Layout currentPage="Notifications">
-      <div className="flex flex-col h-full max-w-4xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Bell className="text-primary" size={24} />
-            <h1 className="text-3xl font-bold text-foreground">
-              Notifications
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all h-10">
-              <Filter size={16} />
-              Filter
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all h-10">
-              <CheckCheck size={16} />
-              Mark all as read
-            </button>
-          </div>
-        </div>
-
-        {/* Notification Categories */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          {[
-            { label: "All", count: 12, active: true },
-            { label: "Unread", count: 5 },
-            { label: "Mentions", count: 3 },
-            { label: "System", count: 4 },
-          ].map((category, index) => (
-            <button
-              key={index}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm flex items-center font-medium transition-all h-10",
-                category.active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted text-muted-foreground border border-border hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              {category.label}
-              <span
-                className={cn(
-                  "ml-2 px-2 py-1 rounded-full text-xs",
-                  category.active
-                    ? "bg-primary-foreground/20 text-primary-foreground"
-                    : "bg-accent text-accent-foreground"
-                )}
-              >
-                {category.count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Notifications List */}
-        <div className="flex-1 min-h-0">
-          <div className="h-full overflow-y-auto pr-2 -mr-2">
-            <div className="space-y-6 pb-8">
-              <div className="text-sm text-muted-foreground mb-4 font-semibold">
-                Today
-              </div>
-
-              <NotificationCard
-                title="Memory Assistant found a relevant note"
-                message="I found a note about 'onboarding documentation' that matches your recent query."
-                time="2 hours ago"
-                type="ai"
-                read={false}
-              />
-
-              <NotificationCard
-                title="Meeting Reminder: Client Check-in"
-                message="Your meeting starts in 30 minutes. The agenda has been updated."
-                time="3 hours ago"
-                type="reminder"
-                read={false}
-              />
-
-              <NotificationCard
-                title="Alex Ramirez mentioned you"
-                message="@user Can you share the onboarding documentation we discussed yesterday?"
-                time="5 hours ago"
-                type="mention"
-                read={false}
-              />
-
-              <div className="text-sm text-muted-foreground mt-8 mb-4 font-semibold">
-                Yesterday
-              </div>
-
-              <NotificationCard
-                title="Your memory 'Project Roadmap Discussion' was updated"
-                message="Changes were made to the memory you created. Tap to view the changes."
-                time="1 day ago"
-                type="update"
-                read={true}
-              />
-
-              <NotificationCard
-                title="Task deadline approaching"
-                message="The task 'Complete onboarding documentation' is due tomorrow."
-                time="1 day ago"
-                type="deadline"
-                read={true}
-              />
-
-              <div className="text-sm text-muted-foreground mt-8 mb-4 font-semibold">
-                Last Week
-              </div>
-
-              <NotificationCard
-                title="Your reminder: Follow up with marketing team"
-                message="You set a reminder to follow up with the marketing team about the new campaign."
-                time="3 days ago"
-                type="reminder"
-                read={true}
-              />
-
-              <NotificationCard
-                title="System maintenance completed"
-                message="The scheduled system maintenance has been completed successfully."
-                time="5 days ago"
-                type="system"
-                read={true}
-              />
+      <div className="flex flex-col h-full max-h-screen overflow-hidden">
+        {/* Fixed Header Section */}
+        <div className="flex-shrink-0 space-y-6 p-6 pb-0">
+          {/* Welcome Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold brand-terracotta">
+                Notifications
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Stay updated with your latest activities
+              </p>
             </div>
+            <div className="flex gap-3">
+              <button className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer">
+                <Filter size={18} />
+                <span className="hidden sm:inline">Filter</span>
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-all text-primary cursor-pointer">
+                <CheckCheck size={18} />
+                <span className="hidden sm:inline">Mark all read</span>
+                <span className="sm:hidden">Mark read</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Notification Categories */}
+          <div>
+            <h2 className="text-xl font-bold flex items-center gap-2 text-foreground mb-4">
+              <Bell size={20} className="text-primary" />
+              Categories
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: "All", count: 12, active: true },
+                { label: "Unread", count: 5 },
+                { label: "Mentions", count: 3 },
+                { label: "System", count: 4 },
+              ].map((category, index) => (
+                <button
+                  key={index}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-sm flex items-center font-medium transition-all cursor-pointer",
+                    category.active
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "bg-muted text-muted-foreground hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20"
+                  )}
+                >
+                  {category.label}
+                  <span
+                    className={cn(
+                      "ml-2 px-2 py-0.5 rounded-full text-xs",
+                      category.active
+                        ? "bg-primary-foreground/20 text-primary-foreground"
+                        : "bg-secondary text-muted-foreground"
+                    )}
+                  >
+                    {category.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="p-6 pt-4 h-full">
+            <ScrollArea className="h-full">
+              <div className="space-y-6 pr-4">
+                <div className="text-sm text-muted-foreground mb-4 font-semibold">
+                  Today
+                </div>
+
+                <NotificationCard
+                  title="Memory Assistant found a relevant note"
+                  message="I found a note about 'onboarding documentation' that matches your recent query."
+                  time="2 hours ago"
+                  type="ai"
+                  read={false}
+                />
+
+                <NotificationCard
+                  title="Meeting Reminder: Client Check-in"
+                  message="Your meeting starts in 30 minutes. The agenda has been updated."
+                  time="3 hours ago"
+                  type="reminder"
+                  read={false}
+                />
+
+                <NotificationCard
+                  title="Alex Ramirez mentioned you"
+                  message="@user Can you share the onboarding documentation we discussed yesterday?"
+                  time="5 hours ago"
+                  type="mention"
+                  read={false}
+                />
+
+                <div className="text-sm text-muted-foreground mt-8 mb-4 font-semibold">
+                  Yesterday
+                </div>
+
+                <NotificationCard
+                  title="Your memory 'Project Roadmap Discussion' was updated"
+                  message="Changes were made to the memory you created. Tap to view the changes."
+                  time="1 day ago"
+                  type="update"
+                  read={true}
+                />
+
+                <NotificationCard
+                  title="Task deadline approaching"
+                  message="The task 'Complete onboarding documentation' is due tomorrow."
+                  time="1 day ago"
+                  type="deadline"
+                  read={true}
+                />
+
+                <div className="text-sm text-muted-foreground mt-8 mb-4 font-semibold">
+                  Last Week
+                </div>
+
+                <NotificationCard
+                  title="Your reminder: Follow up with marketing team"
+                  message="You set a reminder to follow up with the marketing team about the new campaign."
+                  time="3 days ago"
+                  type="reminder"
+                  read={true}
+                />
+
+                <NotificationCard
+                  title="System maintenance completed"
+                  message="The scheduled system maintenance has been completed successfully."
+                  time="5 days ago"
+                  type="system"
+                  read={true}
+                />
+              </div>
+            </ScrollArea>
           </div>
         </div>
       </div>

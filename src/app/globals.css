@@ -48,199 +48,206 @@
 :root {
   --radius: 0.75rem; /* 12px - modern rounded corners */
 
-  /* === LIGHT THEME - Clean & Modern === */
-  --background: #fafafa; /* Soft white background */
-  --foreground: #0a0a0a; /* Deep black text */
+  /* === COGNOTE BRAND COLORS === */
+  --brand-terracotta: #d99873; /* Primary Brand */
+  --brand-sage: #a3b18a; /* Secondary/Supporting */
+  --brand-beige: #f5f1e6; /* Neutral Background */
+  --brand-teal: #78c6d0; /* Accent */
+  --brand-charcoal: #333333; /* Text/Dark */
 
-  /* Cards with subtle elevation */
+  /* === LIGHT THEME - Cognote Brand === */
+  --background: #ffffff; /* Clean white background */
+  --foreground: #333333; /* Charcoal text */
+
+  /* Cards with subtle warmth */
   --card: #ffffff; /* Pure white cards */
-  --card-foreground: #0a0a0a;
+  --card-foreground: #333333; /* Charcoal text on cards */
   --popover: #ffffff;
-  --popover-foreground: #0a0a0a;
+  --popover-foreground: #333333;
 
-  /* Professional purple accent */
-  --primary: #7c3aed; /* Purple-600 */
-  --primary-foreground: #ffffff;
+  /* Terracotta primary */
+  --primary: #d99873; /* Terracotta primary */
+  --primary-foreground: #ffffff; /* White text on terracotta */
 
-  /* Subtle grays for UI elements */
-  --secondary: #f1f5f9; /* Slate-100 */
-  --secondary-foreground: #0a0a0a;
-  --muted: #f8fafc; /* Slate-50 */
-  --muted-foreground: #64748b; /* Slate-500 */
-  --accent: #f1f5f9;
-  --accent-foreground: #0a0a0a;
+  /* Sage green secondary */
+  --secondary: #a3b18a; /* Sage green */
+  --secondary-foreground: #ffffff; /* White text on sage */
+  --muted: #f5f1e6; /* Warm beige for muted areas */
+  --muted-foreground: #666666; /* Slightly lighter charcoal */
+  --accent: #78c6d0; /* Muted teal accent */
+  --accent-foreground: #ffffff; /* White text on teal */
 
   /* Light borders and inputs */
-  --border: #e2e8f0; /* Slate-200 */
+  --border: #e5dcc9; /* Darker beige for borders */
   --input: #ffffff; /* White input backgrounds */
-  --ring: #7c3aed; /* Purple focus ring */
+  --ring: #d99873; /* Terracotta focus ring */
 
   /* Error state */
-  --destructive: #ef4444; /* Red-500 */
+  --destructive: #d2691e; /* Warm orange-red that fits brand */
 
-  /* Clean light sidebar */
-  --sidebar: #f8fafc; /* Slate-50 */
-  --sidebar-foreground: #0a0a0a;
-  --sidebar-primary: #7c3aed;
+  /* Warm sidebar */
+  --sidebar: #f5f1e6; /* Warm beige */
+  --sidebar-foreground: #333333; /* Charcoal */
+  --sidebar-primary: #d99873; /* Terracotta */
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9; /* Slate-100 for hover */
-  --sidebar-accent-foreground: #0a0a0a;
-  --sidebar-border: #e2e8f0; /* Slate-200 */
-  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #e8e0d0; /* Slightly darker beige for hover */
+  --sidebar-accent-foreground: #333333;
+  --sidebar-border: #e5dcc9; /* Darker beige border */
+  --sidebar-ring: #d99873; /* Terracotta */
 
-  /* Memory type colors - Light theme */
-  --memory-research: #3b82f6; /* Blue-500 */
-  --memory-research-bg: #dbeafe; /* Blue-100 */
-  --memory-research-border: #93c5fd; /* Blue-300 */
+  /* Memory type colors - Light theme with brand harmony */
+  --memory-research: #78c6d0; /* Teal */
+  --memory-research-bg: #e8f6f8; /* Light teal */
+  --memory-research-border: #b8dde3; /* Medium teal */
 
-  --memory-product: #8b5cf6; /* Violet-500 */
-  --memory-product-bg: #ede9fe; /* Violet-100 */
-  --memory-product-border: #c4b5fd; /* Violet-300 */
+  --memory-product: #d99873; /* Terracotta */
+  --memory-product-bg: #f7ede4; /* Light terracotta */
+  --memory-product-border: #e6c4a6; /* Medium terracotta */
 
-  --memory-meeting: #10b981; /* Emerald-500 */
-  --memory-meeting-bg: #d1fae5; /* Emerald-100 */
-  --memory-meeting-border: #6ee7b7; /* Emerald-300 */
+  --memory-meeting: #a3b18a; /* Sage green */
+  --memory-meeting-bg: #f0f3ed; /* Light sage */
+  --memory-meeting-border: #cdd5c0; /* Medium sage */
 
-  --memory-learning: #f59e0b; /* Amber-500 */
-  --memory-learning-bg: #fef3c7; /* Amber-100 */
-  --memory-learning-border: #fcd34d; /* Amber-300 */
+  --memory-learning: #b8860b; /* Dark goldenrod - complements palette */
+  --memory-learning-bg: #faf0d7; /* Light gold */
+  --memory-learning-border: #e6d49a; /* Medium gold */
 
-  --memory-idea: #ec4899; /* Pink-500 */
-  --memory-idea-bg: #fce7f3; /* Pink-100 */
-  --memory-idea-border: #f9a8d4; /* Pink-300 */
+  --memory-idea: #cd853f; /* Peru - warm brown */
+  --memory-idea-bg: #f5f0e8; /* Light peru */
+  --memory-idea-border: #dcc5a3; /* Medium peru */
 
-  --memory-task: #6366f1; /* Indigo-500 */
-  --memory-task-bg: #e0e7ff; /* Indigo-100 */
-  --memory-task-border: #a5b4fc; /* Indigo-300 */
+  --memory-task: #708090; /* Slate gray - neutral */
+  --memory-task-bg: #f0f1f2; /* Light slate */
+  --memory-task-border: #c1c7cc; /* Medium slate */
 
-  --memory-note: #06b6d4; /* Cyan-500 */
-  --memory-note-bg: #cffafe; /* Cyan-100 */
-  --memory-note-border: #67e8f9; /* Cyan-300 */
+  --memory-note: #20b2aa; /* Light sea green */
+  --memory-note-bg: #e0f7f6; /* Light sea green bg */
+  --memory-note-border: #9dddd8; /* Medium sea green */
 
-  --memory-document: #22c55e; /* Green-500 */
-  --memory-document-bg: #dcfce7; /* Green-100 */
-  --memory-document-border: #86efac; /* Green-300 */
+  --memory-document: #228b22; /* Forest green */
+  --memory-document-bg: #e8f5e8; /* Light forest green */
+  --memory-document-border: #a5d4a5; /* Medium forest green */
 
-  --memory-link: #f97316; /* Orange-500 */
-  --memory-link-bg: #fed7aa; /* Orange-200 */
-  --memory-link-border: #fdba74; /* Orange-300 */
+  --memory-link: #d2691e; /* Chocolate - warm orange */
+  --memory-link-bg: #fdf1e8; /* Light chocolate */
+  --memory-link-border: #e6b899; /* Medium chocolate */
 
-  --memory-analysis: #a855f7; /* Purple-500 */
-  --memory-analysis-bg: #f3e8ff; /* Purple-100 */
-  --memory-analysis-border: #d8b4fe; /* Purple-300 */
+  --memory-analysis: #9370db; /* Medium purple */
+  --memory-analysis-bg: #f3eff9; /* Light purple */
+  --memory-analysis-border: #c9b8e8; /* Medium purple */
 
-  --memory-concept: #14b8a6; /* Teal-500 */
-  --memory-concept-bg: #ccfbf1; /* Teal-100 */
-  --memory-concept-border: #5eead4; /* Teal-300 */
+  --memory-concept: #5f9ea0; /* Cadet blue */
+  --memory-concept-bg: #ebf4f4; /* Light cadet blue */
+  --memory-concept-border: #b8ced0; /* Medium cadet blue */
 
-  --memory-event: #f43f5e; /* Rose-500 */
-  --memory-event-bg: #ffe4e6; /* Rose-100 */
-  --memory-event-border: #fda4af; /* Rose-300 */
+  --memory-event: #dc143c; /* Crimson */
+  --memory-event-bg: #fde8ec; /* Light crimson */
+  --memory-event-border: #e8a1b0; /* Medium crimson */
 
-  /* Chart colors */
-  --chart-1: #7c3aed;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #ec4899;
-  --chart-5: #06b6d4;
+  /* Chart colors - brand harmonious */
+  --chart-1: #d99873; /* Terracotta */
+  --chart-2: #a3b18a; /* Sage */
+  --chart-3: #78c6d0; /* Teal */
+  --chart-4: #b8860b; /* Gold */
+  --chart-5: #708090; /* Slate */
 }
 
 .dark {
-  /* === DARK THEME - Clean & Modern === */
-  --background: #0a0a0a; /* Deep black */
-  --foreground: #fafafa; /* Off-white text */
+  /* === DARK THEME - Cognote Brand === */
+  --background: #1a1916; /* Very dark warm brown */
+  --foreground: #f5f1e6; /* Warm beige text */
 
-  /* Dark cards with subtle borders */
-  --card: #161616; /* Dark gray cards */
-  --card-foreground: #fafafa;
-  --popover: #161616;
-  --popover-foreground: #fafafa;
+  /* Dark cards with warmth */
+  --card: #262320; /* Dark warm gray */
+  --card-foreground: #f5f1e6; /* Warm beige text */
+  --popover: #262320;
+  --popover-foreground: #f5f1e6;
 
-  /* Brighter purple for dark mode */
-  --primary: #a855f7; /* Purple-500 */
-  --primary-foreground: #0a0a0a;
+  /* Brighter terracotta for dark mode */
+  --primary: #e6a882; /* Lighter terracotta */
+  --primary-foreground: #1a1916; /* Dark background text */
 
-  /* Dark secondary colors */
-  --secondary: #262626; /* Neutral-800 */
-  --secondary-foreground: #fafafa;
-  --muted: #171717; /* Neutral-900 */
-  --muted-foreground: #a3a3a3; /* Neutral-400 */
-  --accent: #262626;
-  --accent-foreground: #fafafa;
+  /* Dark sage green */
+  --secondary: #8fa077; /* Muted sage for dark */
+  --secondary-foreground: #1a1916;
+  --muted: #1f1d1a; /* Darker warm brown */
+  --muted-foreground: #9b958a; /* Warm gray text */
+  --accent: #8bd3dc; /* Brighter teal for dark */
+  --accent-foreground: #1a1916;
 
   /* Dark borders */
-  --border: #404040; /* Neutral-700 */
-  --input: #171717; /* Dark input bg */
-  --ring: #a855f7; /* Purple focus ring */
+  --border: #3d3a35; /* Dark warm gray border */
+  --input: #262320; /* Dark input bg */
+  --ring: #e6a882; /* Lighter terracotta focus ring */
 
   /* Dark error state */
-  --destructive: #f87171; /* Red-400 */
+  --destructive: #e67e40; /* Brighter warm orange */
 
-  /* Dark sidebar */
-  --sidebar: #0d0d0d; /* Slightly lighter than background */
-  --sidebar-foreground: #fafafa;
-  --sidebar-primary: #a855f7;
-  --sidebar-primary-foreground: #0a0a0a;
-  --sidebar-accent: #262626; /* Hover state */
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: #404040;
-  --sidebar-ring: #a855f7;
+  /* Dark sidebar with warmth */
+  --sidebar: #1c1a17; /* Slightly different dark warm */
+  --sidebar-foreground: #f5f1e6;
+  --sidebar-primary: #e6a882;
+  --sidebar-primary-foreground: #1a1916;
+  --sidebar-accent: #2b2823; /* Hover state */
+  --sidebar-accent-foreground: #f5f1e6;
+  --sidebar-border: #3d3a35;
+  --sidebar-ring: #e6a882;
 
-  /* Memory type colors - Dark theme (brighter versions) */
-  --memory-research: #60a5fa; /* Blue-400 */
-  --memory-research-bg: #1e3a8a; /* Blue-800 with opacity */
-  --memory-research-border: #1d4ed8; /* Blue-700 */
+  /* Memory type colors - Dark theme (brighter, warmer versions) */
+  --memory-research: #95d9e3; /* Brighter teal */
+  --memory-research-bg: #1f3a3d; /* Dark teal */
+  --memory-research-border: #4a7c85; /* Medium dark teal */
 
-  --memory-product: #a78bfa; /* Violet-400 */
-  --memory-product-bg: #5b21b6; /* Violet-800 */
-  --memory-product-border: #7c3aed; /* Violet-600 */
+  --memory-product: #e6a882; /* Brighter terracotta */
+  --memory-product-bg: #3d2e23; /* Dark terracotta */
+  --memory-product-border: #7a5a42; /* Medium dark terracotta */
 
-  --memory-meeting: #34d399; /* Emerald-400 */
-  --memory-meeting-bg: #065f46; /* Emerald-800 */
-  --memory-meeting-border: #059669; /* Emerald-600 */
+  --memory-meeting: #b8c7a3; /* Brighter sage */
+  --memory-meeting-bg: #2b3326; /* Dark sage */
+  --memory-meeting-border: #5a6b4f; /* Medium dark sage */
 
-  --memory-learning: #fbbf24; /* Amber-400 */
-  --memory-learning-bg: #92400e; /* Amber-800 */
-  --memory-learning-border: #d97706; /* Amber-600 */
+  --memory-learning: #dac520; /* Brighter gold */
+  --memory-learning-bg: #3d3418; /* Dark gold */
+  --memory-learning-border: #7a6c35; /* Medium dark gold */
 
-  --memory-idea: #f472b6; /* Pink-400 */
-  --memory-idea-bg: #9d174d; /* Pink-800 */
-  --memory-idea-border: #db2777; /* Pink-600 */
+  --memory-idea: #dda570; /* Brighter peru */
+  --memory-idea-bg: #3d2f23; /* Dark peru */
+  --memory-idea-border: #7a5e47; /* Medium dark peru */
 
-  --memory-task: #818cf8; /* Indigo-400 */
-  --memory-task-bg: #3730a3; /* Indigo-800 */
-  --memory-task-border: #4f46e5; /* Indigo-600 */
+  --memory-task: #9cada8; /* Brighter slate */
+  --memory-task-bg: #252b2d; /* Dark slate */
+  --memory-task-border: #4f595c; /* Medium dark slate */
 
-  --memory-note: #22d3ee; /* Cyan-400 */
-  --memory-note-bg: #155e75; /* Cyan-800 */
-  --memory-note-border: #0891b2; /* Cyan-600 */
+  --memory-note: #4dd4cc; /* Brighter sea green */
+  --memory-note-bg: #1f3c3a; /* Dark sea green */
+  --memory-note-border: #3f7b77; /* Medium dark sea green */
 
-  --memory-document: #4ade80; /* Green-400 */
-  --memory-document-bg: #166534; /* Green-800 */
-  --memory-document-border: #16a34a; /* Green-600 */
+  --memory-document: #4caf50; /* Brighter forest green */
+  --memory-document-bg: #1f3520; /* Dark forest green */
+  --memory-document-border: #3f6b41; /* Medium dark forest green */
 
-  --memory-link: #fb923c; /* Orange-400 */
-  --memory-link-bg: #9a3412; /* Orange-800 */
-  --memory-link-border: #ea580c; /* Orange-600 */
+  --memory-link: #f0884d; /* Brighter chocolate */
+  --memory-link-bg: #3d261a; /* Dark chocolate */
+  --memory-link-border: #7a4f35; /* Medium dark chocolate */
 
-  --memory-analysis: #c084fc; /* Purple-400 */
-  --memory-analysis-bg: #6b21a8; /* Purple-800 */
-  --memory-analysis-border: #9333ea; /* Purple-600 */
+  --memory-analysis: #b893f0; /* Brighter purple */
+  --memory-analysis-bg: #2f1f3d; /* Dark purple */
+  --memory-analysis-border: #5f3f7a; /* Medium dark purple */
 
-  --memory-concept: #2dd4bf; /* Teal-400 */
-  --memory-concept-bg: #115e59; /* Teal-800 */
-  --memory-concept-border: #0d9488; /* Teal-600 */
+  --memory-concept: #85bdc0; /* Brighter cadet blue */
+  --memory-concept-bg: #1f3435; /* Dark cadet blue */
+  --memory-concept-border: #3f6a6d; /* Medium dark cadet blue */
 
-  --memory-event: #fb7185; /* Rose-400 */
-  --memory-event-bg: #9f1239; /* Rose-800 */
-  --memory-event-border: #e11d48; /* Rose-600 */
+  --memory-event: #ff5f7a; /* Brighter crimson */
+  --memory-event-bg: #3d1f26; /* Dark crimson */
+  --memory-event-border: #7a3f4c; /* Medium dark crimson */
 
   /* Dark chart colors */
-  --chart-1: #a855f7;
-  --chart-2: #34d399;
-  --chart-3: #fbbf24;
-  --chart-4: #f472b6;
-  --chart-5: #22d3ee;
+  --chart-1: #e6a882; /* Brighter terracotta */
+  --chart-2: #b8c7a3; /* Brighter sage */
+  --chart-3: #95d9e3; /* Brighter teal */
+  --chart-4: #dac520; /* Brighter gold */
+  --chart-5: #9cada8; /* Brighter slate */
 }
 
 @layer base {
@@ -253,7 +260,16 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Improved scrollbar styling */
+  /* Force accent colors to override any cached values */
+  .hover\:bg-accent:hover {
+    background-color: var(--accent) !important;
+  }
+
+  .hover\:text-accent-foreground:hover {
+    color: var(--accent-foreground) !important;
+  }
+
+  /* Improved scrollbar styling with brand colors */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -264,16 +280,66 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded-full;
+    background-color: var(--brand-terracotta);
+    border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    background-color: var(--brand-sage);
   }
 }
 
 /* Memory type utility classes */
 @layer utilities {
+  /* Brand color utilities */
+  .brand-terracotta {
+    color: var(--brand-terracotta);
+  }
+  .brand-sage {
+    color: var(--brand-sage);
+  }
+  .brand-beige {
+    color: var(--brand-beige);
+  }
+  .brand-coral {
+    color: var(--brand-coral);
+  }
+  .brand-charcoal {
+    color: var(--brand-charcoal);
+  }
+
+  .bg-brand-terracotta {
+    background-color: var(--brand-terracotta);
+  }
+  .bg-brand-sage {
+    background-color: var(--brand-sage);
+  }
+  .bg-brand-beige {
+    background-color: var(--brand-beige);
+  }
+  .bg-brand-coral {
+    background-color: var(--brand-coral);
+  }
+  .bg-brand-charcoal {
+    background-color: var(--brand-charcoal);
+  }
+
+  .border-brand-terracotta {
+    border-color: var(--brand-terracotta);
+  }
+  .border-brand-sage {
+    border-color: var(--brand-sage);
+  }
+  .border-brand-beige {
+    border-color: var(--brand-beige);
+  }
+  .border-brand-coral {
+    border-color: var(--brand-coral);
+  }
+  .border-brand-charcoal {
+    border-color: var(--brand-charcoal);
+  }
+
   .memory-research {
     color: var(--memory-research);
   }
@@ -395,23 +461,25 @@
   }
 }
 
-/* Component-specific improvements */
+/* Component-specific improvements with brand warmth */
 @layer components {
   .card-shadow {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    box-shadow: 0 1px 3px 0 rgb(217 152 115 / 0.1),
+      0 1px 2px -1px rgb(217 152 115 / 0.1);
   }
 
   .card-shadow-lg {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1),
-      0 4px 6px -4px rgb(0 0 0 / 0.1);
+    box-shadow: 0 10px 15px -3px rgb(217 152 115 / 0.1),
+      0 4px 6px -4px rgb(217 152 115 / 0.1);
   }
 
   .dark .card-shadow {
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+    box-shadow: 0 1px 3px 0 rgb(217 152 115 / 0.2),
+      0 1px 2px -1px rgb(217 152 115 / 0.2);
   }
 
   .dark .card-shadow-lg {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3),
-      0 4px 6px -4px rgb(0 0 0 / 0.3);
+    box-shadow: 0 10px 15px -3px rgb(217 152 115 / 0.2),
+      0 4px 6px -4px rgb(217 152 115 / 0.2);
   }
 }

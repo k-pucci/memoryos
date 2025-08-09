@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import Layout from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import {
   Search as SearchIcon,
@@ -21,6 +22,7 @@ import {
   X,
   Clock,
   Filter,
+  Plus,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -331,64 +333,83 @@ function SearchContent() {
 
   return (
     <div className="flex flex-col h-full max-h-screen overflow-hidden">
-      {/* Fixed Header */}
+      {/* Fixed Header Section */}
       <div className="flex-shrink-0 space-y-6 p-6 pb-0">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <SearchIcon className="text-primary mr-2" size={22} />
-            <h1 className="text-2xl font-bold text-foreground">
+        {/* Welcome Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold brand-terracotta">
               Search Memories
             </h1>
+            <p className="text-muted-foreground mt-2">
+              Find exactly what you're looking for in your memory collection
+            </p>
           </div>
-
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-          >
-            <Filter size={16} />
-            <span>Filters</span>
-            {hasActiveFilters() && (
-              <span className="w-2 h-2 rounded-full bg-primary"></span>
-            )}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer"
+            >
+              <Filter size={18} />
+              <span className="hidden sm:inline">Filters</span>
+              {hasActiveFilters() && (
+                <span className="w-2 h-2 rounded-full bg-primary"></span>
+              )}
+            </button>
+            <button
+              onClick={() => router.push("/new-memory")}
+              className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-all text-primary cursor-pointer"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">New Memory</span>
+              <span className="sm:hidden">New</span>
+            </button>
+          </div>
         </div>
 
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <SearchIcon size={18} className="text-muted-foreground" />
+        {/* Search Input */}
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2 text-foreground mb-4">
+            <SearchIcon size={20} className="text-primary" />
+            Search
+          </h2>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <SearchIcon size={18} className="text-muted-foreground" />
+            </div>
+            <Input
+              ref={searchInputRef}
+              value={query}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Search your memories..."
+              className="bg-card border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all card-shadow"
+            />
+            {query && (
+              <button
+                className="absolute right-3 top-[12px] text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => {
+                  setQuery("");
+                  if (filters.category) {
+                    performSearch("", filters.category);
+                  } else {
+                    setResults([]);
+                  }
+                  if (searchInputRef.current) {
+                    searchInputRef.current.focus();
+                  }
+                }}
+              >
+                <X size={18} />
+              </button>
+            )}
           </div>
-          <Input
-            ref={searchInputRef}
-            value={query}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Search your memories..."
-            className="bg-card border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all card-shadow"
-          />
-          {query && (
-            <button
-              className="absolute right-3 top-[12px] text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => {
-                setQuery("");
-                if (filters.category) {
-                  performSearch("", filters.category);
-                } else {
-                  setResults([]);
-                }
-                if (searchInputRef.current) {
-                  searchInputRef.current.focus();
-                }
-              }}
-            >
-              <X size={18} />
-            </button>
-          )}
         </div>
 
         {/* Recent searches */}
         {recentSearches.length > 0 && !query && (
           <div className="mb-2">
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center mb-2">
               <p className="text-sm text-muted-foreground flex items-center">
                 <Clock size={14} className="mr-1" /> Recent searches
               </p>
@@ -404,7 +425,7 @@ function SearchContent() {
                 <button
                   key={index}
                   onClick={() => useRecentSearch(recentQuery)}
-                  className="px-2 py-1 text-sm bg-muted text-foreground hover:bg-accent transition-colors rounded-md"
+                  className="px-3 py-1.5 text-sm bg-muted text-foreground hover:bg-brand-coral/10 hover:text-brand-coral transition-colors rounded-full"
                 >
                   {recentQuery}
                 </button>
@@ -483,7 +504,7 @@ function SearchContent() {
                       "px-2 py-1 text-xs rounded-full transition-colors",
                       filters.tags.includes(tag)
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-brand-coral/10 hover:text-brand-coral"
                     )}
                   >
                     {tag}
@@ -527,13 +548,13 @@ function SearchContent() {
             <div className="flex justify-end space-x-2 pt-2 border-t border-border">
               <button
                 onClick={clearAllFilters}
-                className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+                className="px-3 py-1.5 border border-border text-muted-foreground hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 rounded-md transition-colors"
               >
                 Clear Filters
               </button>
               <button
                 onClick={applyFilters}
-                className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-md hover:opacity-90 transition-opacity"
+                className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
                 Apply Filters
               </button>
@@ -569,153 +590,156 @@ function SearchContent() {
       <div className="flex-1 min-h-0 overflow-hidden">
         {isSearching ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div className="text-center space-y-4">
+              <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+              <p className="text-muted-foreground">
+                Searching your memories...
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="p-6 pt-4 h-full overflow-y-auto">
-            <div className="space-y-4">
-              {results.length > 0 ? (
-                <>
-                  <div className="flex justify-between items-center">
-                    <p className="text-muted-foreground text-sm">
-                      Found {results.length}{" "}
-                      {results.length === 1 ? "result" : "results"}
-                      {query ? ` for "${query}"` : ""}
-                      {filters.category
-                        ? ` in category "${filters.category}"`
-                        : ""}
-                    </p>
-                    <button
-                      onClick={() => router.push("/new-memory")}
-                      className="text-sm text-primary hover:text-primary/80 transition-colors"
-                    >
-                      + Add new memory
-                    </button>
-                  </div>
+          <div className="p-6 pt-4 h-full">
+            <ScrollArea className="h-full">
+              <div className="space-y-4 pr-4">
+                {results.length > 0 ? (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <p className="text-muted-foreground text-sm">
+                        Found {results.length}{" "}
+                        {results.length === 1 ? "result" : "results"}
+                        {query ? ` for "${query}"` : ""}
+                        {filters.category
+                          ? ` in category "${filters.category}"`
+                          : ""}
+                      </p>
+                    </div>
 
-                  {results.map((memory) => (
-                    <Card
-                      key={memory.id}
-                      className="bg-card border-border hover:border-primary/30 transition-colors cursor-pointer card-shadow hover:card-shadow-lg"
-                      onClick={() => router.push(`/memory/${memory.id}`)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-start">
-                            <h3 className="text-xl font-semibold text-foreground">
-                              {memory.title}
-                            </h3>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
-                                {memory.category}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {formatDistanceToNow(
-                                  new Date(memory.created_at),
-                                  { addSuffix: true }
-                                )}
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className="text-muted-foreground">
-                            {memory.summary ||
-                              memory.content.substring(0, 150) +
-                                (memory.content.length > 150 ? "..." : "")}
-                          </p>
-
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {memory.tags &&
-                              memory.tags.map((tag, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full"
-                                >
-                                  {tag}
+                    {results.map((memory) => (
+                      <Card
+                        key={memory.id}
+                        className="bg-card border-border hover:border-primary/30 transition-colors cursor-pointer card-shadow hover:card-shadow-lg"
+                        onClick={() => router.push(`/memory/${memory.id}`)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <h3 className="text-xl font-semibold text-foreground">
+                                {memory.title}
+                              </h3>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                                  {memory.category}
                                 </span>
-                              ))}
-                          </div>
-
-                          <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t border-border">
-                            <div className="flex items-center gap-1">
-                              {getMemoryTypeIcon(memory.memory_type)}
-                              <span>{memory.memory_type}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDistanceToNow(
+                                    new Date(memory.created_at),
+                                    { addSuffix: true }
+                                  )}
+                                </span>
+                              </div>
                             </div>
 
-                            {memory.source_url && (
-                              <button
-                                onClick={(
-                                  e: React.MouseEvent<HTMLButtonElement>
-                                ) => {
-                                  e.stopPropagation();
-                                  if (memory.source_url) {
-                                    window.open(
-                                      memory.source_url,
-                                      "_blank",
-                                      "noopener,noreferrer"
-                                    );
-                                  }
-                                }}
-                                className="text-blue-500 hover:text-blue-400 flex items-center gap-1 transition-colors"
-                              >
-                                <ExternalLink size={14} />
-                                <span>Source</span>
-                              </button>
-                            )}
+                            <p className="text-muted-foreground">
+                              {memory.summary ||
+                                memory.content.substring(0, 150) +
+                                  (memory.content.length > 150 ? "..." : "")}
+                            </p>
 
-                            {memory.similarity < 1 && (
-                              <div
-                                className={cn(
-                                  "px-2 py-1 rounded-full text-xs",
-                                  getMatchBackgroundClass(memory.similarity)
-                                )}
-                              >
-                                {Math.round(memory.similarity * 100)}% match
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {memory.tags &&
+                                memory.tags.map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t border-border">
+                              <div className="flex items-center gap-1">
+                                {getMemoryTypeIcon(memory.memory_type)}
+                                <span>{memory.memory_type}</span>
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </>
-              ) : (
-                !isSearching &&
-                (query || hasActiveFilters()) && (
-                  <div className="text-center py-20 text-muted-foreground">
-                    <SearchIcon
-                      size={40}
-                      className="mx-auto mb-4 text-muted-foreground/50"
-                    />
-                    <h3 className="text-xl font-medium mb-2 text-foreground">
-                      No memories found
-                    </h3>
-                    <p className="mb-6">
-                      Try a different search term or add a new memory
-                    </p>
-                    <button
-                      onClick={() => router.push("/new-memory")}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all"
-                    >
-                      Add New Memory
-                    </button>
-                  </div>
-                )
-              )}
 
-              {!isSearching && !query && !hasActiveFilters() && (
-                <div className="text-center py-20 text-muted-foreground">
-                  <SearchIcon
-                    size={40}
-                    className="mx-auto mb-4 text-muted-foreground/50"
-                  />
-                  <h3 className="text-xl font-medium mb-2 text-foreground">
-                    Search your memory stack
-                  </h3>
-                  <p>Start typing to search through your memories</p>
-                </div>
-              )}
-            </div>
+                              {memory.source_url && (
+                                <button
+                                  onClick={(
+                                    e: React.MouseEvent<HTMLButtonElement>
+                                  ) => {
+                                    e.stopPropagation();
+                                    if (memory.source_url) {
+                                      window.open(
+                                        memory.source_url,
+                                        "_blank",
+                                        "noopener,noreferrer"
+                                      );
+                                    }
+                                  }}
+                                  className="text-blue-500 hover:text-blue-400 flex items-center gap-1 transition-colors"
+                                >
+                                  <ExternalLink size={14} />
+                                  <span>Source</span>
+                                </button>
+                              )}
+
+                              {memory.similarity < 1 && (
+                                <div
+                                  className={cn(
+                                    "px-2 py-1 rounded-full text-xs",
+                                    getMatchBackgroundClass(memory.similarity)
+                                  )}
+                                >
+                                  {Math.round(memory.similarity * 100)}% match
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </>
+                ) : (
+                  !isSearching &&
+                  (query || hasActiveFilters()) && (
+                    <div className="flex flex-col items-center justify-center h-64 text-center">
+                      <SearchIcon
+                        size={48}
+                        className="text-muted-foreground/50 mb-4"
+                      />
+                      <h3 className="text-lg font-medium text-foreground mb-2">
+                        No memories found
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        Try a different search term or add a new memory
+                      </p>
+                      <button
+                        onClick={() => router.push("/new-memory")}
+                        className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
+                      >
+                        Add New Memory
+                      </button>
+                    </div>
+                  )
+                )}
+
+                {!isSearching && !query && !hasActiveFilters() && (
+                  <div className="flex flex-col items-center justify-center h-64 text-center">
+                    <SearchIcon
+                      size={48}
+                      className="text-muted-foreground/50 mb-4"
+                    />
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      Search your memory stack
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Start typing to search through your memories
+                    </p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         )}
       </div>
@@ -730,7 +754,10 @@ export default function SearchPage() {
       <Suspense
         fallback={
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <div className="text-center space-y-4">
+              <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+              <p className="text-muted-foreground">Loading search...</p>
+            </div>
           </div>
         }
       >

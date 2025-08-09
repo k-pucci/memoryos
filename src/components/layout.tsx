@@ -257,20 +257,17 @@ export default function Layout({
               className="flex items-center cursor-pointer"
               onClick={() => navigateTo("/")}
             >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-blue-500 text-2xl font-bold mr-1">
-                Memory
-              </span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-500 text-2xl font-bold">
-                OS
+              <span className="brand-terracotta text-2xl font-bold mr-1">
+                Cognote
               </span>
             </div>
           )}
           {sidebarCollapsed && (
             <div
-              className="mx-auto text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-indigo-500 text-2xl font-bold cursor-pointer"
+              className="mx-auto brand-terracotta text-2xl font-bold cursor-pointer"
               onClick={() => navigateTo("/")}
             >
-              M
+              C
             </div>
           )}
           <button
@@ -385,7 +382,7 @@ export default function Layout({
                     {searchResults.map((memory) => (
                       <div
                         key={memory.id}
-                        className="p-3 border-b border-border last:border-b-0 hover:bg-accent cursor-pointer"
+                        className="p-3 border-b border-border last:border-b-0 hover:bg-secondary/20 hover:text-foreground cursor-pointer"
                         onClick={() => viewMemory(memory.id)}
                       >
                         <div className="flex justify-between mb-1">
@@ -415,7 +412,7 @@ export default function Layout({
                       </div>
                     ))}
                     <div
-                      className="p-3 text-center bg-popover hover:bg-accent cursor-pointer text-primary hover:text-primary/80 text-sm font-medium"
+                      className="p-3 text-center bg-popover hover:bg-secondary/20 cursor-pointer text-primary hover:text-primary/80 text-sm font-medium"
                       onClick={viewAllResults}
                     >
                       See all results for "{searchQuery}"
@@ -439,7 +436,7 @@ export default function Layout({
           {/* User Avatar */}
           <div className="flex items-center gap-3">
             <button
-              className="bg-gradient-to-r from-purple-500 to-blue-500 p-2 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer"
+              className="bg-primary p-2 rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
               onClick={() => navigateTo("/new-memory")}
             >
               <Plus size={18} />
@@ -448,7 +445,7 @@ export default function Layout({
               className="border-2 border-primary/30 h-10 w-10 cursor-pointer"
               onClick={() => navigateTo("/profile")}
             >
-              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-medium">
+              <AvatarFallback className="bg-primary text-primary-foreground font-medium">
                 MS
               </AvatarFallback>
             </Avatar>

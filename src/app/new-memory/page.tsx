@@ -133,7 +133,7 @@ export default function NewMemoryPage() {
       }
 
       toast.success("Memory created successfully!");
-      router.push("/memory-stack");
+      router.push("/library");
     } catch (error: any) {
       console.error("Error creating memory:", error);
       toast.dismiss("embedding");
@@ -154,7 +154,7 @@ export default function NewMemoryPage() {
 
           if (response.ok) {
             toast.success("Memory created (without AI features)");
-            router.push("/memory-stack");
+            router.push("/library");
           } else {
             throw new Error("Failed to create memory");
           }
@@ -183,13 +183,13 @@ export default function NewMemoryPage() {
           {/* AI Status Indicator */}
           <div className="flex items-center gap-2 text-sm">
             {isEmbeddingLoading ? (
-              <div className="flex items-center gap-2 text-blue-500">
+              <div className="flex items-center gap-2 brand-coral">
                 <Loader2 size={16} className="animate-spin" />
                 <span>Loading AI...</span>
               </div>
             ) : isReady ? (
-              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              <div className="flex items-center gap-2 brand-sage">
+                <div className="w-2 h-2 bg-brand-sage rounded-full"></div>
                 <span>AI Ready</span>
               </div>
             ) : (
@@ -205,9 +205,7 @@ export default function NewMemoryPage() {
           Capture and store your knowledge in your personal memory system with
           AI-powered search.
           {!isReady && (
-            <span className="text-amber-600 dark:text-amber-400 ml-2">
-              (AI features loading...)
-            </span>
+            <span className="brand-coral ml-2">(AI features loading...)</span>
           )}
         </p>
 
@@ -248,7 +246,7 @@ export default function NewMemoryPage() {
                         "px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer",
                         selectedCategory === category
                           ? "bg-primary text-primary-foreground shadow-sm"
-                          : "bg-muted text-muted-foreground border border-border hover:bg-accent hover:text-accent-foreground"
+                          : "bg-muted text-muted-foreground border border-border hover:bg-secondary/20 hover:text-foreground"
                       )}
                     >
                       {category}
@@ -278,7 +276,7 @@ export default function NewMemoryPage() {
                         "flex items-center gap-2 p-3 rounded-lg text-sm font-medium transition-all cursor-pointer",
                         selectedType === type.name
                           ? "bg-primary/10 text-primary border border-primary/20"
-                          : "bg-muted text-muted-foreground border border-border hover:bg-accent hover:text-accent-foreground"
+                          : "bg-muted text-muted-foreground border border-border hover:bg-secondary/20 hover:text-foreground"
                       )}
                     >
                       <span className="text-lg">{type.icon}</span>
@@ -369,8 +367,8 @@ export default function NewMemoryPage() {
                 <div className="flex gap-3">
                   <button
                     type="button"
-                    className="px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all cursor-pointer"
-                    onClick={() => router.push("/memory-stack")}
+                    className="px-4 py-2 border border-border rounded-lg text-muted-foreground hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer"
+                    onClick={() => router.push("/library")}
                   >
                     Cancel
                   </button>
@@ -378,7 +376,7 @@ export default function NewMemoryPage() {
                     type="button"
                     onClick={handleCreateMemory}
                     disabled={isSubmitting}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 px-6 py-2 rounded-lg text-white hover:shadow-lg hover:shadow-purple-500/20 transition-all flex items-center cursor-pointer disabled:opacity-50 font-medium"
+                    className="bg-primary px-6 py-2 rounded-lg text-primary-foreground hover:bg-primary/90 transition-all flex items-center cursor-pointer disabled:opacity-50 font-medium"
                   >
                     {isSubmitting ? (
                       <>

@@ -29,6 +29,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import Layout from "@/components/layout";
+import { cn } from "@/lib/utils";
 
 // Types
 interface Memory {
@@ -69,7 +70,6 @@ const getMemoryTypeClass = (memoryType: string, category: string) => {
   const type = memoryType.toLowerCase();
   const cat = category.toLowerCase();
 
-  // Check if we have a specific memory type class
   const memoryTypes = [
     "research",
     "product",
@@ -225,7 +225,10 @@ export default function LibraryPage() {
     return (
       <Layout currentPage="Library">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <div className="text-center space-y-4">
+            <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading your library...</p>
+          </div>
         </div>
       </Layout>
     );
@@ -234,13 +237,25 @@ export default function LibraryPage() {
   if (error) {
     return (
       <Layout currentPage="Library">
-        <div className="space-y-6 p-4">
-          <div className="flex items-center">
-            <BookOpen className="text-primary mr-2" size={22} />
-            <h1 className="text-2xl font-bold">Library</h1>
+        <div className="flex flex-col h-full max-h-screen overflow-hidden">
+          <div className="flex-shrink-0 space-y-6 p-6 pb-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-bold brand-terracotta">
+                  Memory Library
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Access your collected knowledge and memories
+                </p>
+              </div>
+            </div>
           </div>
-          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive">
-            {error}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="p-6 pt-4">
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
+                {error}
+              </div>
+            </div>
           </div>
         </div>
       </Layout>
@@ -255,27 +270,26 @@ export default function LibraryPage() {
       <div className="flex flex-col h-full max-h-screen overflow-hidden">
         {/* Fixed Header Section */}
         <div className="flex-shrink-0 space-y-6 p-6 pb-0">
-          {/* Title and Add Button */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <BookOpen className="text-primary mr-3" size={24} />
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">
-                  Memory Library
-                </h1>
-                <p className="text-muted-foreground text-sm mt-1">
-                  Access your collected knowledge and memories
-                </p>
-              </div>
+          {/* Welcome Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold brand-terracotta">
+                Memory Library
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Access your collected knowledge and memories
+              </p>
             </div>
-
-            <button
-              onClick={() => router.push("/new-memory")}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-4 py-2 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer flex items-center text-sm font-medium"
-            >
-              <Plus size={16} className="mr-2" />
-              Add Memory
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push("/new-memory")}
+                className="flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">New Memory</span>
+                <span className="sm:hidden">New</span>
+              </button>
+            </div>
           </div>
 
           {/* Search */}
@@ -309,7 +323,7 @@ export default function LibraryPage() {
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
                   selectedCategory === category
                     ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20"
                 }`}
               >
                 {category}
@@ -333,24 +347,24 @@ export default function LibraryPage() {
           <ScrollArea className="h-full">
             <div className="p-6 pt-4">
               {filteredMemories.length === 0 ? (
-                <div className="text-center py-20 text-muted-foreground">
-                  <BookOpen
+                <div className="flex flex-col items-center justify-center h-64 text-center">
+                  <Archive
                     size={48}
-                    className="mx-auto mb-4 text-muted-foreground/30"
+                    className="text-muted-foreground/50 mb-4"
                   />
-                  <h3 className="text-xl font-medium mb-2 text-foreground">
+                  <h3 className="text-lg font-medium text-foreground mb-2">
                     {searchQuery || selectedCategory !== "All"
                       ? "No memories found"
                       : "No memories yet"}
                   </h3>
-                  <p className="mb-6 text-muted-foreground max-w-md mx-auto">
+                  <p className="text-muted-foreground mb-6">
                     {searchQuery || selectedCategory !== "All"
                       ? "Try a different search term or category"
-                      : "Start building your memory library by adding your first memory"}
+                      : "Start building your memory library"}
                   </p>
                   <button
                     onClick={() => router.push("/new-memory")}
-                    className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-lg hover:shadow-lg hover:shadow-purple-500/20 transition-all cursor-pointer font-medium"
+                    className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
                   >
                     Add Your First Memory
                   </button>
@@ -359,7 +373,8 @@ export default function LibraryPage() {
                 <div className="space-y-8">
                   {recentMemories.length > 0 && (
                     <div>
-                      <h2 className="text-lg font-semibold mb-4 text-foreground">
+                      <h2 className="text-xl font-bold flex items-center gap-2 text-foreground mb-4">
+                        <Clock size={20} className="text-primary" />
                         Recent Memories
                       </h2>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -376,7 +391,8 @@ export default function LibraryPage() {
 
                   {olderMemories.length > 0 && (
                     <div>
-                      <h2 className="text-lg font-semibold mb-4 text-foreground">
+                      <h2 className="text-xl font-bold flex items-center gap-2 text-foreground mb-4">
+                        <Archive size={20} className="text-primary" />
                         {recentMemories.length > 0
                           ? "Earlier Memories"
                           : "All Memories"}
@@ -418,12 +434,14 @@ function MemoryCard({ memory, onView }: MemoryCardProps) {
 
   return (
     <Card
-      className="bg-card border-border overflow-hidden relative group hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer card-shadow hover:card-shadow-lg"
+      className={cn(
+        "bg-card border-border overflow-hidden relative group hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer card-shadow hover:card-shadow-lg"
+      )}
       onClick={onView}
     >
       {/* Top accent line */}
       <div
-        className={`absolute top-0 left-0 w-full h-1 ${memoryClass}-bg opacity-60`}
+        className={`absolute top-0 left-0 w-full h-1 ${memoryClass}-bg`}
       ></div>
 
       <CardContent className="p-4 pt-5">
@@ -431,22 +449,25 @@ function MemoryCard({ memory, onView }: MemoryCardProps) {
           <div className="flex items-center space-x-2">
             <div className={`${memoryClass} opacity-70`}>{icon}</div>
             <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${memoryClass}-bg ${memoryClass}`}
+              className={cn(
+                "text-xs px-2 py-1 rounded-full font-medium",
+                `${memoryClass}-bg ${memoryClass}`
+              )}
             >
               {memory.memory_type}
             </span>
           </div>
-          <button className="text-muted-foreground hover:text-foreground transition-colors opacity-0 group-hover:opacity-100">
-            <ArrowUpRight size={16} />
-          </button>
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ArrowUpRight size={16} className="text-muted-foreground" />
+          </div>
         </div>
 
-        <h3 className="font-semibold text-foreground mb-2 line-clamp-2 text-base leading-tight">
+        <h2 className="font-semibold text-foreground mb-2 line-clamp-2 transition-colors">
           {memory.title}
-        </h3>
+        </h2>
 
         {displayContent && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-2 transition-colors">
             {displayContent}
           </p>
         )}
@@ -471,16 +492,24 @@ function MemoryCard({ memory, onView }: MemoryCardProps) {
 
         <div className="flex items-center justify-between text-xs">
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${memoryClass}-bg ${memoryClass} opacity-80`}
+            className={cn(
+              "text-xs px-2 py-1 rounded-full font-medium",
+              `${memoryClass}-bg ${memoryClass}`
+            )}
           >
             {memory.category}
           </span>
-          <div className="flex items-center text-muted-foreground">
-            <Clock size={12} className="mr-1" />
-            <span>
+          <div className="flex items-center text-muted-foreground gap-1">
+            <Clock size={12} />
+            <span className="hidden sm:inline">
               {formatDistanceToNow(new Date(memory.created_at), {
                 addSuffix: true,
               })}
+            </span>
+            <span className="sm:hidden">
+              {formatDistanceToNow(new Date(memory.created_at), {
+                addSuffix: true,
+              }).replace(" ago", "")}
             </span>
           </div>
         </div>

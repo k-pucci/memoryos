@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Memory OS",
-  description: "Your personal memory assistant",
+  title: "Cognote",
+  description: "Notes that think",
 };
 
 export default function RootLayout({
