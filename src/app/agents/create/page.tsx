@@ -20,6 +20,7 @@ import {
   CheckCircle,
   AlertCircle,
   Settings,
+  Loader2,
 } from "lucide-react";
 import Layout from "@/components/layout";
 import { useRouter } from "next/navigation";
@@ -207,13 +208,10 @@ export default function CreateAgentPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => router.back()}
-                className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer"
-              >
+              <Button variant="outline" onClick={() => router.back()}>
                 <ArrowLeft size={18} />
-                <span className="hidden sm:inline">Back</span>
-              </button>
+                <span className="hidden sm:inline ml-2">Back</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -238,8 +236,8 @@ export default function CreateAgentPage() {
                         className={cn(
                           "p-6 rounded-lg border cursor-pointer transition-all group",
                           selectedTemplate === index
-                            ? "bg-primary/10 border-primary text-primary shadow-md"
-                            : "bg-muted border-border hover:bg-brand-coral/10 hover:border-brand-coral/20"
+                            ? "bg-primary/10 border-primary text-primary card-shadow"
+                            : "bg-muted border-border hover:bg-primary/10 hover:border-primary/30 hover:card-shadow"
                         )}
                         onClick={() => handleTemplateSelect(template, index)}
                       >
@@ -250,7 +248,7 @@ export default function CreateAgentPage() {
                               "font-semibold text-lg transition-colors",
                               selectedTemplate === index
                                 ? "text-primary"
-                                : "text-foreground group-hover:text-brand-coral"
+                                : "text-foreground group-hover:text-primary"
                             )}
                           >
                             {template.name}
@@ -308,25 +306,25 @@ export default function CreateAgentPage() {
                               )}
                             </div>
                             {imagePreview && (
-                              <button
+                              <Button
                                 type="button"
+                                variant="destructive"
+                                size="icon"
                                 onClick={removeImage}
-                                className="absolute -top-2 -right-2 w-7 h-7 bg-destructive rounded-full flex items-center justify-center text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                                className="absolute -top-2 -right-2 w-7 h-7 rounded-full"
                               >
                                 <X size={14} />
-                              </button>
+                              </Button>
                             )}
                           </div>
                           <div className="space-y-3">
                             <Button
                               type="button"
                               variant="outline"
-                              size="sm"
                               onClick={() => fileInputRef.current?.click()}
-                              className="h-10 px-4 hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20"
                             >
-                              <Upload size={16} className="mr-2" />
-                              Upload Image
+                              <Upload size={16} />
+                              <span className="ml-2">Upload Image</span>
                             </Button>
                             <p className="text-xs text-muted-foreground">
                               PNG, JPG up to 5MB
@@ -352,7 +350,7 @@ export default function CreateAgentPage() {
                             setFormData({ ...formData, name: e.target.value })
                           }
                           placeholder="e.g., Recipe Assistant"
-                          className="bg-background border-border text-foreground placeholder:text-muted-foreground h-11 px-4"
+                          className="h-11"
                         />
                       </div>
 
@@ -369,7 +367,7 @@ export default function CreateAgentPage() {
                             })
                           }
                           placeholder="What does this agent help with?"
-                          className="bg-background border-border text-foreground placeholder:text-muted-foreground min-h-[100px] p-4 resize-none"
+                          className="min-h-[100px] resize-none"
                         />
                       </div>
 
@@ -386,7 +384,7 @@ export default function CreateAgentPage() {
                             })
                           }
                           placeholder="recipe, cooking, food, ingredients (comma-separated)"
-                          className="bg-background border-border text-foreground placeholder:text-muted-foreground h-11 px-4"
+                          className="h-11"
                         />
                         <p className="text-xs text-muted-foreground mt-2">
                           Keywords used for intelligent routing
@@ -413,7 +411,7 @@ export default function CreateAgentPage() {
                           onChange={(e) =>
                             setFormData({ ...formData, model: e.target.value })
                           }
-                          className="w-full h-11 px-4 py-2 bg-background border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring focus:ring-primary/20"
+                          className="w-full h-11 px-4 py-2 bg-background border border-border rounded-md text-foreground focus:border-primary focus:ring focus:ring-primary/20"
                         >
                           <option value="llama3-8b-8192">
                             Llama3-8b (Fast, efficient)
@@ -464,7 +462,7 @@ export default function CreateAgentPage() {
                             })
                           }
                           placeholder="Product, Research, Meeting (comma-separated)"
-                          className="bg-background border-border text-foreground placeholder:text-muted-foreground h-11 px-4"
+                          className="h-11"
                         />
                       </div>
 
@@ -480,7 +478,7 @@ export default function CreateAgentPage() {
                               time_preference: e.target.value,
                             })
                           }
-                          className="w-full h-11 px-4 py-2 bg-background border border-border rounded-md text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring focus:ring-primary/20"
+                          className="w-full h-11 px-4 py-2 bg-background border border-border rounded-md text-foreground focus:border-primary focus:ring focus:ring-primary/20"
                         >
                           <option value="recent">Recent (last 30 days)</option>
                           <option value="all">All time</option>
@@ -511,7 +509,7 @@ export default function CreateAgentPage() {
                         })
                       }
                       placeholder="You are a helpful assistant that specializes in... Focus on... Always provide..."
-                      className="bg-background border-border text-foreground placeholder:text-muted-foreground min-h-[140px] p-4 resize-none"
+                      className="min-h-[140px] resize-none"
                     />
                     <div className="mt-3 text-sm text-muted-foreground leading-relaxed">
                       Define how your agent should behave, what it specializes
@@ -625,17 +623,16 @@ export default function CreateAgentPage() {
                           type="button"
                           variant="outline"
                           onClick={() => setPreviewMode(!previewMode)}
-                          className="h-11 px-6 hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20"
                         >
                           {previewMode ? (
                             <>
-                              <ArrowLeft size={16} className="mr-2" />
-                              Edit Agent
+                              <ArrowLeft size={16} />
+                              <span className="ml-2">Edit Agent</span>
                             </>
                           ) : (
                             <>
-                              <Bot size={16} className="mr-2" />
-                              Preview Agent
+                              <Bot size={16} />
+                              <span className="ml-2">Preview Agent</span>
                             </>
                           )}
                         </Button>
@@ -659,9 +656,9 @@ export default function CreateAgentPage() {
                       <div className="flex gap-4 w-full sm:w-auto">
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => router.back()}
-                          className="flex-1 sm:flex-none h-11 px-6 hover:bg-muted-foreground/10 hover:text-foreground transition-colors"
+                          className="flex-1 sm:flex-none"
                         >
                           Cancel
                         </Button>
@@ -669,17 +666,20 @@ export default function CreateAgentPage() {
                         <Button
                           type="submit"
                           disabled={isLoading || !isFormValid}
-                          className="bg-primary hover:bg-primary/90 flex-1 sm:flex-none min-w-[160px] h-11 px-6"
+                          className="flex-1 sm:flex-none min-w-[160px]"
                         >
                           {isLoading ? (
                             <>
-                              <div className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                              <Loader2
+                                size={16}
+                                className="animate-spin mr-2"
+                              />
                               Creating...
                             </>
                           ) : (
                             <>
-                              <Save size={16} className="mr-2" />
-                              Create Agent
+                              <Save size={16} />
+                              <span className="ml-2">Create Agent</span>
                             </>
                           )}
                         </Button>

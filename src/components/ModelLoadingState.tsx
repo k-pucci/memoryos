@@ -1,3 +1,4 @@
+// src/components/ModelLoadingState.tsx
 "use client";
 import { useEmbeddings } from "@/hooks/useEmbeddings";
 import { useEffect } from "react";

@@ -1,24 +1,25 @@
-// /app/chat/page.tsx - Enhanced Unified Chat Interface
+// /app/chat/page.tsx - Modern floating chat interface
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  SelectionGroup,
+  SelectionOption,
+} from "@/components/ui/selection-group";
+import {
   Send,
   Bot,
   User,
-  Plus,
-  Settings,
   AtSign,
-  Sparkles,
-  MessageSquare,
   Brain,
   Copy,
   ThumbsUp,
   ThumbsDown,
+  Plus,
+  Sparkles,
 } from "lucide-react";
 import { useEmbeddings } from "@/hooks/useEmbeddings";
 import Layout from "@/components/layout";
@@ -43,28 +44,41 @@ interface Message {
   timestamp: string;
 }
 
-export default function UnifiedChatPage() {
+// Quick action suggestions
+const quickActions = [
+  "Summarize my recent memories",
+  "What are my most important tasks?",
+  "Find insights from my notes",
+  "Create a weekly review",
+];
+
+export default function ChatPage() {
   const { generateEmbedding, isLoading: isEmbeddingLoading } = useEmbeddings();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [showAgentSuggestions, setShowAgentSuggestions] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load user's agents
   useEffect(() => {
     loadUserAgents();
-    // Initialize with welcome message
-    setMessages([
-      {
-        id: "welcome",
-        role: "assistant",
-        content: `Hi! I'm your unified AI assistant. I can help you with:\n\n• **General questions** - I'll automatically choose the best agent\n• **@mentions** - Type @agent-name to use a specific agent\n• **Complex requests** - Like "summarize my recent meetings and create next steps"\n\nWhat would you like to explore in your memories?`,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
+
+    // Check if there's a selected agent from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const agentId = urlParams.get("agent");
+    if (agentId) {
+      setTimeout(() => {
+        const agent = agents.find((a) => a.id === agentId);
+        if (agent) {
+          setSelectedAgent(agent);
+          setInputMessage(`@${agent.name.toLowerCase().replace(" ", "-")} `);
+        }
+      }, 100);
+    }
   }, []);
 
   useEffect(() => {
@@ -74,10 +88,52 @@ export default function UnifiedChatPage() {
   const loadUserAgents = async () => {
     try {
       const response = await fetch("/api/agents/user-agents");
+      if (!response.ok) {
+        throw new Error("Failed to fetch agents");
+      }
       const data = await response.json();
       setAgents(data.agents || []);
     } catch (error) {
       console.error("Error loading agents:", error);
+      setAgents([]);
+    }
+  };
+
+  // Get agent options for SelectionGroup
+  const getAgentOptions = (): SelectionOption[] => {
+    return [
+      {
+        value: "",
+        label: "Auto-select",
+        icon: <Sparkles size={16} />,
+        description: "Let AI choose the best agent",
+      },
+      ...agents.map((agent) => ({
+        value: agent.id,
+        label: agent.name,
+        icon: agent.avatar_url ? (
+          <img src={agent.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+        ) : (
+          <Bot size={16} />
+        ),
+        description: agent.description,
+      })),
+    ];
+  };
+
+  // Handle agent selection
+  const handleAgentChange = (agentId: string) => {
+    if (agentId === "") {
+      setSelectedAgent(null);
+      window.history.replaceState({}, "", "/chat");
+    } else {
+      const agent = agents.find((a) => a.id === agentId);
+      setSelectedAgent(agent || null);
+      if (agent) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("agent", agent.id);
+        window.history.replaceState({}, "", url.toString());
+      }
     }
   };
 
@@ -161,7 +217,8 @@ export default function UnifiedChatPage() {
         body: JSON.stringify({
           message: currentMessage,
           embedding,
-          chat_history: messages.slice(-10), // Last 10 messages for context
+          chat_history: messages.slice(-10),
+          selected_agent: selectedAgent?.id,
         }),
       });
 
@@ -211,84 +268,100 @@ export default function UnifiedChatPage() {
   const copyMessage = async (content: string) => {
     try {
       await navigator.clipboard.writeText(content);
-      // Could add a toast notification here
     } catch (error) {
       console.error("Failed to copy message:", error);
     }
+  };
+
+  // Handle quick action
+  const handleQuickAction = (action: string) => {
+    setInputMessage(action);
+    textareaRef.current?.focus();
+  };
+
+  // Start new conversation
+  const startNewConversation = () => {
+    setMessages([]);
+    setSelectedAgent(null);
+    setInputMessage("");
+    window.history.replaceState({}, "", "/chat");
   };
 
   return (
     <Layout currentPage="Chat">
       <div className="flex flex-col h-full max-h-screen overflow-hidden">
         {/* Fixed Header Section */}
-        <div className="flex-shrink-0 space-y-4 p-6 pb-0">
-          {/* Welcome Header */}
+        <div className="flex-shrink-0 space-y-6 p-6 pb-0">
+          {/* Main Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold brand-terracotta">
-                Unified Chat
-              </h1>
+              <h1 className="text-3xl font-bold brand-terracotta">AI Chat</h1>
               <p className="text-muted-foreground mt-2">
-                Chat with all your agents in one place
+                {selectedAgent
+                  ? `Chatting with ${selectedAgent.name}`
+                  : "Chat with your AI assistants"}
               </p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => (window.location.href = "/agents/create")}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-all text-primary cursor-pointer"
+              <Button variant="outline" onClick={startNewConversation}>
+                <Plus size={18} />
+                <span className="ml-2">New Chat</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => (window.location.href = "/agents/view")}
               >
                 <Brain size={18} />
-                <span className="hidden sm:inline">New Agent</span>
-                <span className="sm:hidden">New</span>
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer">
-                <Settings size={18} />
-                <span className="hidden sm:inline">Settings</span>
-                <span className="sm:hidden">Settings</span>
-              </button>
+                <span className="ml-2">Manage Agents</span>
+              </Button>
             </div>
           </div>
 
-          {/* Agent Bar */}
-          <div>
-            <h2 className="text-xl font-bold flex items-center gap-2 text-foreground mb-3">
-              <Brain size={20} className="text-primary" />
-              Available Agents
-            </h2>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {agents.slice(0, 6).map((agent) => (
-                <div
-                  key={agent.id}
-                  className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer flex-shrink-0"
-                  onClick={() =>
-                    setInputMessage(
-                      (prev) =>
-                        prev + `@${agent.name.toLowerCase().replace(" ", "-")} `
-                    )
-                  }
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={agent.avatar_url} />
-                    <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                      {agent.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{agent.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Agent Selection */}
+          <SelectionGroup
+            options={getAgentOptions()}
+            value={selectedAgent?.id || ""}
+            onChange={handleAgentChange}
+            label="Select Agent"
+            variant="buttons"
+            size="sm"
+          />
         </div>
 
-        {/* Scrollable Content Area */}
+        {/* Floating Chat Container */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="flex flex-col h-full p-6 pt-3">
-            {/* Chat Messages */}
-            <div className="flex-1 min-h-0">
-              <Card className="h-full bg-card border-border card-shadow flex flex-col">
-                <CardContent className="flex-1 p-0 min-h-0 overflow-hidden">
-                  <ScrollArea className="h-full">
-                    <div className="p-4 space-y-4">
+          <div className="p-6 pt-4 h-full">
+            <div className="w-full max-w-4xl h-full flex flex-col mx-auto">
+              {/* Chat Messages */}
+              <div className="flex-1 min-h-0">
+                {messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center">
+                    <div className="p-4 bg-primary/10 rounded-full mb-6">
+                      <Sparkles size={32} className="text-primary" />
+                    </div>
+                    <h2 className="text-xl font-semibold text-foreground mb-3">
+                      Ready to chat!
+                    </h2>
+                    <p className="text-muted-foreground mb-8 max-w-md">
+                      Ask me anything about your memories, or use @ to mention
+                      specific agents.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
+                      {quickActions.map((action, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleQuickAction(action)}
+                          className="p-3 text-left bg-card border border-border rounded-lg hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all text-sm card-shadow"
+                        >
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-full pr-4">
+                    <div className="space-y-6 p-6">
                       {messages.map((message) => (
                         <MessageBubble
                           key={message.id}
@@ -298,18 +371,18 @@ export default function UnifiedChatPage() {
                         />
                       ))}
 
-                      {/* Loading indicator */}
                       {isLoading && <LoadingIndicator />}
 
                       <div ref={messagesEndRef} />
                     </div>
                   </ScrollArea>
-                </CardContent>
+                )}
+              </div>
 
-                {/* Enhanced Input Area */}
+              {/* Chat Input */}
+              <div className="flex-shrink-0 mt-4">
                 <ChatInput
                   inputMessage={inputMessage}
-                  setInputMessage={setInputMessage}
                   handleInputChange={handleInputChange}
                   handleKeyDown={handleKeyDown}
                   sendMessage={sendMessage}
@@ -319,8 +392,9 @@ export default function UnifiedChatPage() {
                   showAgentSuggestions={showAgentSuggestions}
                   agents={agents}
                   insertAgentMention={insertAgentMention}
+                  selectedAgent={selectedAgent}
                 />
-              </Card>
+              </div>
             </div>
           </div>
         </div>
@@ -352,12 +426,11 @@ function MessageBubble({
       onMouseLeave={() => setShowActions(false)}
     >
       <div
-        className={`flex gap-3 max-w-[85%] ${
+        className={`flex gap-4 max-w-[80%] ${
           message.role === "user" ? "flex-row-reverse" : ""
         }`}
       >
-        {/* Avatar */}
-        <Avatar className="h-10 w-10 mt-1 flex-shrink-0">
+        <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
           {message.role === "assistant" ? (
             message.agent_used ? (
               <>
@@ -370,93 +443,75 @@ function MessageBubble({
               </>
             ) : (
               <AvatarFallback className="bg-primary/20 text-primary">
-                <Bot size={18} />
+                <Bot size={16} />
               </AvatarFallback>
             )
           ) : (
-            <AvatarFallback className="bg-primary/20 text-primary">
-              <User size={18} />
+            <AvatarFallback className="bg-primary/10 text-primary">
+              <User size={16} />
             </AvatarFallback>
           )}
         </Avatar>
 
-        {/* Message Content */}
         <div
           className={`flex flex-col ${
             message.role === "user" ? "items-end" : ""
-          } relative`}
+          } relative group`}
         >
-          {/* Agent indicator */}
           {message.role === "assistant" && message.agent_used && (
-            <div className="text-xs text-muted-foreground mb-1">
-              <AtSign size={10} className="inline mr-1" />
+            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+              <AtSign size={10} />
               {message.agent_used}
             </div>
           )}
 
-          {/* Message bubble */}
           <div
             className={cn(
-              "rounded-xl p-4 relative group",
+              "rounded-2xl px-4 py-3 relative max-w-none",
               message.role === "assistant"
                 ? "bg-muted text-foreground"
-                : "bg-primary/10 text-foreground border border-primary/20"
+                : "bg-primary text-primary-foreground"
             )}
           >
-            <p className="whitespace-pre-wrap leading-relaxed">
+            <p className="whitespace-pre-wrap leading-relaxed text-sm">
               {message.content}
             </p>
 
-            {/* Message Actions */}
             {showActions && (
               <div
-                className={`absolute top-2 ${
-                  message.role === "user" ? "left-2" : "right-2"
+                className={`absolute -top-2 ${
+                  message.role === "user" ? "-left-2" : "-right-2"
                 } flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity`}
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 bg-background/80 hover:bg-background"
+                <button
+                  className="h-6 w-6 bg-background border border-border hover:bg-muted rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer card-shadow"
                   onClick={() => copyMessage(message.content)}
                 >
-                  <Copy size={12} />
-                </Button>
+                  <Copy size={10} />
+                </button>
                 {message.role === "assistant" && (
                   <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 bg-background/80 hover:bg-background"
-                    >
-                      <ThumbsUp size={12} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 bg-background/80 hover:bg-background"
-                    >
-                      <ThumbsDown size={12} />
-                    </Button>
+                    <button className="h-6 w-6 bg-background border border-border hover:bg-muted rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer card-shadow">
+                      <ThumbsUp size={10} />
+                    </button>
+                    <button className="h-6 w-6 bg-background border border-border hover:bg-muted rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground transition-all cursor-pointer card-shadow">
+                      <ThumbsDown size={10} />
+                    </button>
                   </>
                 )}
               </div>
             )}
 
-            {/* Sources */}
             {message.sources && message.sources.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border">
+              <div className="mt-3 pt-3 border-t border-border/50">
                 <p className="text-xs text-muted-foreground mb-2">
                   Sources from your memories:
                 </p>
                 <div className="space-y-1">
-                  {message.sources.slice(0, 3).map((source) => (
+                  {message.sources.slice(0, 3).map((source, index) => (
                     <div
-                      key={source.id}
-                      className="text-xs p-2 rounded bg-secondary hover:bg-brand-coral/10 hover:text-brand-coral transition-colors border border-border cursor-pointer"
-                      onClick={() =>
-                        (window.location.href = `/memory/${source.id}`)
-                      }
+                      key={source.id || index}
+                      className="text-xs p-2 rounded-lg bg-background/50 hover:bg-background border border-border/50 hover:border-border transition-colors cursor-pointer"
                     >
                       <div className="font-medium">{source.title}</div>
                     </div>
@@ -466,8 +521,11 @@ function MessageBubble({
             )}
           </div>
 
-          {/* Timestamp */}
-          <div className="text-xs text-muted-foreground mt-1">
+          <div
+            className={`text-xs text-muted-foreground mt-1 ${
+              message.role === "user" ? "text-right" : ""
+            }`}
+          >
             {new Date(message.timestamp).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -483,14 +541,14 @@ function MessageBubble({
 function LoadingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="flex gap-3">
-        <Avatar className="h-10 w-10 mt-1">
+      <div className="flex gap-4">
+        <Avatar className="h-8 w-8 mt-1">
           <AvatarFallback className="bg-primary/20 text-primary">
-            <Bot size={18} />
+            <Bot size={16} />
           </AvatarFallback>
         </Avatar>
-        <div className="bg-muted text-foreground rounded-xl p-4">
-          <div className="flex space-x-2">
+        <div className="bg-muted text-foreground rounded-2xl px-4 py-3">
+          <div className="flex space-x-1">
             <div className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"></div>
             <div
               className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"
@@ -510,7 +568,6 @@ function LoadingIndicator() {
 // Chat Input Component
 interface ChatInputProps {
   inputMessage: string;
-  setInputMessage: (message: string) => void;
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   sendMessage: () => void;
@@ -520,11 +577,11 @@ interface ChatInputProps {
   showAgentSuggestions: boolean;
   agents: Agent[];
   insertAgentMention: (agentName: string) => void;
+  selectedAgent: Agent | null;
 }
 
 function ChatInput({
   inputMessage,
-  setInputMessage,
   handleInputChange,
   handleKeyDown,
   sendMessage,
@@ -534,52 +591,58 @@ function ChatInput({
   showAgentSuggestions,
   agents,
   insertAgentMention,
+  selectedAgent,
 }: ChatInputProps) {
   return (
-    <div className="flex-shrink-0 border-t border-border bg-background relative">
-      {/* Agent Suggestions Dropdown */}
+    <div className="relative">
       {showAgentSuggestions && (
-        <div className="absolute bottom-full left-4 right-4 mb-2 bg-popover border border-border rounded-lg card-shadow-lg z-10">
-          <div className="p-2">
-            <div className="text-xs text-muted-foreground mb-2">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-xl card-shadow z-10">
+          <div className="p-3">
+            <div className="text-xs text-muted-foreground mb-3 font-medium">
               Available agents:
             </div>
-            {agents.map((agent) => (
-              <div
-                key={agent.id}
-                className="flex items-center gap-2 p-2 hover:bg-brand-coral/10 hover:text-brand-coral rounded cursor-pointer transition-colors"
-                onClick={() => insertAgentMention(agent.name)}
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={agent.avatar_url} />
-                  <AvatarFallback className="text-xs bg-primary/20 text-primary">
-                    {agent.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="text-sm">{agent.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {agent.description}
+            <div className="space-y-1">
+              {agents.map((agent) => (
+                <div
+                  key={agent.id}
+                  className="flex items-center gap-3 p-2 hover:bg-primary/10 hover:text-primary rounded-lg cursor-pointer transition-colors"
+                  onClick={() => insertAgentMention(agent.name)}
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={agent.avatar_url} />
+                    <AvatarFallback className="text-xs bg-primary/20 text-primary">
+                      {agent.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">{agent.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {agent.description}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      <div className="p-4">
-        <div className="flex items-center gap-3">
+      <div className="bg-card border border-border rounded-xl card-shadow p-4">
+        <div className="flex items-end gap-3">
           <div className="relative flex-1">
             <textarea
               ref={textareaRef}
-              placeholder="Ask anything... Use @agent-name to mention specific agents"
+              placeholder={
+                selectedAgent
+                  ? `Ask ${selectedAgent.name} anything...`
+                  : "Type your message... Use @ to mention agents"
+              }
               className={cn(
-                "w-full min-h-[48px] max-h-[120px] px-4 py-3 pr-4",
-                "bg-card border border-border rounded-xl",
+                "w-full min-h-[44px] max-h-[120px] px-0 py-0",
+                "bg-transparent border-0",
                 "text-foreground placeholder:text-muted-foreground",
-                "resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all",
-                "shadow-sm"
+                "resize-none focus:outline-none",
+                "text-sm leading-relaxed"
               )}
               value={inputMessage}
               onChange={handleInputChange}
@@ -587,47 +650,38 @@ function ChatInput({
               disabled={isLoading || isEmbeddingLoading}
             />
 
-            {/* Mention indicator */}
             {inputMessage.includes("@") && (
-              <div className="absolute right-3 top-3 text-primary">
+              <div className="absolute right-0 top-0 text-primary">
                 <AtSign size={16} />
               </div>
             )}
           </div>
 
           <Button
-            size="icon"
-            className={cn(
-              "bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shadow-sm",
-              "h-[48px] w-[48px] flex-shrink-0"
-            )}
             onClick={sendMessage}
             disabled={!inputMessage.trim() || isLoading || isEmbeddingLoading}
+            size="sm"
+            className="h-10 w-10 p-0 rounded-lg shrink-0"
           >
             {isLoading || isEmbeddingLoading ? (
-              <div className="w-5 h-5 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
             ) : (
-              <Send size={18} />
+              <Send size={16} />
             )}
           </Button>
         </div>
 
-        {/* Helper text */}
-        <div className="mt-3 text-xs text-muted-foreground text-center">
-          {isEmbeddingLoading ? (
-            <span className="text-amber-600 dark:text-amber-400">
-              Generating embedding...
-            </span>
-          ) : isLoading ? (
-            <span className="text-primary">AI is thinking...</span>
-          ) : (
-            <>
-              Type <span className="text-primary">@agent-name</span> to mention
-              specific agents •{" "}
-              <span className="text-muted-foreground">Press Enter to send</span>
-            </>
-          )}
-        </div>
+        {(isLoading || isEmbeddingLoading) && (
+          <div className="mt-3 text-xs text-center">
+            {isEmbeddingLoading ? (
+              <span className="text-amber-600 dark:text-amber-400">
+                Generating embedding...
+              </span>
+            ) : (
+              <span className="text-primary">AI is thinking...</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,40 +1,29 @@
-// components/layout.tsx - Updated with clean theming
+// components/layout.tsx - Updated to use SearchBar component
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { SearchBar, SearchResult } from "@/components/ui/search-bar";
 import {
   Home,
-  Database,
-  Search,
   BookOpen,
-  Calendar,
   Bell,
   Settings,
   Plus,
   Menu,
-  Edit,
-  Globe,
-  FileText,
-  Archive,
-  X,
-  Loader2,
-  Bot,
   Moon,
   Sun,
-  BarChart3,
-  Puzzle,
-  Rocket,
-  GraduationCap,
-  Microscope,
-  Lightbulb,
-  CheckSquare,
+  MessageSquare,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { useTheme } from "@/components/ThemeProvider";
+import {
+  MemoryResult,
+  getMemoryTypeIcon,
+  formatMemoryDate,
+} from "@/lib/memory-utils";
+import { performMemorySearch } from "@/lib/search-utils";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -49,54 +38,11 @@ interface NavButtonProps {
   onClick: () => void;
 }
 
-interface MemoryResult {
-  id: string;
-  title: string;
-  category: string;
-  memory_type: string;
-  content: string;
-  summary: string;
-  tags: string[];
-  source_url: string | null;
-  created_at: string;
-  updated_at: string;
-  similarity: number;
-}
-
 interface NavItem {
   icon: React.ReactNode;
   label: string;
   path: string;
 }
-
-// Simple debounce implementation
-function debounce<F extends (...args: any[]) => any>(func: F, wait: number) {
-  let timeout: NodeJS.Timeout;
-  return function (this: any, ...args: Parameters<F>) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
-// Get icon for memory type
-const getMemoryTypeIcon = (memoryType: string) => {
-  const iconMap: { [key: string]: React.ReactNode } = {
-    note: <Edit size={14} />,
-    document: <FileText size={14} />,
-    link: <Globe size={14} />,
-    analysis: <BarChart3 size={14} />,
-    concept: <Puzzle size={14} />,
-    event: <Calendar size={14} />,
-    research: <Microscope size={14} />,
-    product: <Rocket size={14} />,
-    meeting: <Calendar size={14} />,
-    learning: <GraduationCap size={14} />,
-    idea: <Lightbulb size={14} />,
-    task: <CheckSquare size={14} />,
-  };
-
-  return iconMap[memoryType.toLowerCase()] || <Archive size={14} />;
-};
 
 export default function Layout({
   children,
@@ -105,34 +51,27 @@ export default function Layout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const router = useRouter();
   const pathname = usePathname();
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const { theme, toggleTheme } = useTheme();
-
-  // Search state
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MemoryResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const searchResultsRef = useRef<HTMLDivElement>(null);
 
   // Navigation items with their paths
   const navItems: NavItem[] = [
     { icon: <Home size={18} />, label: "Home", path: "/" },
     { icon: <BookOpen size={18} />, label: "Library", path: "/library" },
-    { icon: <Bot size={18} />, label: "AI Chat", path: "/chat" },
+    { icon: <MessageSquare size={18} />, label: "Chat", path: "/chat" },
     {
       icon: <Settings size={18} />,
-      label: "Create Agents",
-      path: "/agents/create",
+      label: "Agents",
+      path: "/agents/view",
     },
   ];
 
   const bottomNavItems: NavItem[] = [
-    {
-      icon: <Bell size={18} />,
-      label: "Notifications",
-      path: "/notifications",
-    },
+    // Temporarily commented out notifications
+    // {
+    //   icon: <Bell size={18} />,
+    //   label: "Notifications",
+    //   path: "/notifications",
+    // },
   ];
 
   // Handle navigation
@@ -140,106 +79,66 @@ export default function Layout({
     router.push(path);
   };
 
-  // Handle clicks outside search results
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchResultsRef.current &&
-        !searchResultsRef.current.contains(event.target as Node) &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(event.target as Node)
-      ) {
-        setShowSearchResults(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  // Create a debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.trim().length >= 2) {
-        performSearch(query);
-      } else {
-        setSearchResults([]);
-        setShowSearchResults(false);
-      }
-    }, 300),
-    []
-  );
-
-  // Function to handle search input changes
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newQuery = e.target.value;
-    setSearchQuery(newQuery);
-
-    if (newQuery.trim().length >= 2) {
-      setShowSearchResults(true);
-      debouncedSearch(newQuery);
-    } else {
-      setSearchResults([]);
-      setShowSearchResults(false);
-    }
-  };
-
-  // Function to perform the search
-  const performSearch = async (query: string) => {
-    if (!query.trim()) return;
-
-    setIsSearching(true);
-
+  // Search function for memories
+  const searchMemories = async (query: string): Promise<SearchResult[]> => {
     try {
-      const response = await fetch("/api/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: query,
-          limit: 5,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Search failed");
-      }
-
-      const data = await response.json();
-      setSearchResults(data.results || []);
+      const results = await performMemorySearch(query, 5);
+      return results.map((memory) => ({
+        id: memory.id,
+        title: memory.title,
+        content: memory.content,
+        summary: memory.summary,
+        created_at: memory.created_at,
+        memory_type: memory.memory_type,
+        category: memory.category,
+      }));
     } catch (error) {
-      console.error("Error searching memories:", error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
+      console.error("Search error:", error);
+      return [];
     }
   };
 
-  // Function to clear search
-  const clearSearch = () => {
-    setSearchQuery("");
-    setSearchResults([]);
-    setShowSearchResults(false);
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+  // Custom result renderer for memories
+  const renderMemoryResult = (result: SearchResult) => {
+    const memory = result as MemoryResult;
+    return (
+      <div
+        key={memory.id}
+        className="p-3 border-b border-border last:border-b-0 hover:bg-secondary/20 hover:text-foreground cursor-pointer"
+        onClick={() => navigateTo(`/memory/${memory.id}`)}
+      >
+        <div className="flex justify-between mb-1">
+          <h4 className="font-medium text-foreground">{memory.title}</h4>
+          <span className="text-xs text-muted-foreground">
+            {formatMemoryDate(memory.created_at)}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {memory.summary ||
+            memory.content.substring(0, 120) +
+              (memory.content.length > 120 ? "..." : "")}
+        </p>
+        <div className="flex justify-between items-center mt-2">
+          <div className="flex gap-1 items-center text-xs text-muted-foreground">
+            {getMemoryTypeIcon(memory.memory_type)}
+            <span className="ml-1">{memory.memory_type}</span>
+          </div>
+          <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
+            {memory.category}
+          </span>
+        </div>
+      </div>
+    );
   };
 
-  // Function to view a memory
-  const viewMemory = (memoryId: string) => {
-    clearSearch();
-    navigateTo(`/memory/${memoryId}`);
+  // Handle search result click
+  const handleResultClick = (result: SearchResult) => {
+    navigateTo(`/memory/${result.id}`);
   };
 
-  // Function to view all results
-  const viewAllResults = () => {
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-      clearSearch();
-    }
+  // Handle view all results
+  const handleViewAllResults = (query: string) => {
+    router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -270,12 +169,14 @@ export default function Layout({
               C
             </div>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors"
+            className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
           >
             <Menu size={18} />
-          </button>
+          </Button>
         </div>
 
         {/* Navigation */}
@@ -301,20 +202,20 @@ export default function Layout({
         {/* Bottom buttons */}
         <div className="mt-auto flex flex-col space-y-1">
           {/* Theme toggle button */}
-          <button
-            className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent transition-colors relative group cursor-pointer text-sidebar-foreground/70 hover:text-sidebar-foreground"
+          <Button
+            variant="ghost"
             onClick={toggleTheme}
+            className="justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground"
           >
-            <div className="text-sidebar-foreground/60 group-hover:text-sidebar-foreground/80">
+            <div className="text-sidebar-foreground/60">
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </div>
-
             {!sidebarCollapsed && (
-              <span className="text-sm">
+              <span className="ml-3 text-sm">
                 {theme === "dark" ? "Light Mode" : "Dark Mode"}
               </span>
             )}
-          </button>
+          </Button>
 
           {bottomNavItems.map((item, index) => (
             <NavButton
@@ -333,114 +234,25 @@ export default function Layout({
       <div className="flex-1 p-6 flex flex-col gap-6 overflow-auto">
         {/* Header */}
         <div className="flex justify-between items-center">
-          {/* Search Bar with real-time search */}
-          <div className="relative w-2/3">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-muted-foreground" />
-            </div>
-            <Input
-              ref={searchInputRef}
-              value={searchQuery}
-              onChange={handleSearchChange}
-              placeholder="Search your memories..."
-              className="bg-card border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all card-shadow"
-              onFocus={() => {
-                if (
-                  searchQuery.trim().length >= 2 &&
-                  searchResults.length > 0
-                ) {
-                  setShowSearchResults(true);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && searchQuery) {
-                  viewAllResults();
-                }
-              }}
-            />
-            {searchQuery && (
-              <button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                onClick={clearSearch}
-              >
-                <X size={16} />
-              </button>
-            )}
-
-            {/* Search Results Dropdown */}
-            {showSearchResults && (
-              <div
-                ref={searchResultsRef}
-                className="absolute top-full left-0 w-full mt-2 bg-popover border border-border rounded-lg card-shadow-lg overflow-hidden z-20"
-              >
-                {isSearching ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  </div>
-                ) : searchResults.length > 0 ? (
-                  <div className="max-h-[400px] overflow-y-auto">
-                    {searchResults.map((memory) => (
-                      <div
-                        key={memory.id}
-                        className="p-3 border-b border-border last:border-b-0 hover:bg-secondary/20 hover:text-foreground cursor-pointer"
-                        onClick={() => viewMemory(memory.id)}
-                      >
-                        <div className="flex justify-between mb-1">
-                          <h4 className="font-medium text-foreground">
-                            {memory.title}
-                          </h4>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(memory.created_at), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {memory.summary ||
-                            memory.content.substring(0, 120) +
-                              (memory.content.length > 120 ? "..." : "")}
-                        </p>
-                        <div className="flex justify-between items-center mt-2">
-                          <div className="flex gap-1 items-center text-xs text-muted-foreground">
-                            {getMemoryTypeIcon(memory.memory_type)}
-                            <span className="ml-1">{memory.memory_type}</span>
-                          </div>
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
-                            {memory.category}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                    <div
-                      className="p-3 text-center bg-popover hover:bg-secondary/20 cursor-pointer text-primary hover:text-primary/80 text-sm font-medium"
-                      onClick={viewAllResults}
-                    >
-                      See all results for "{searchQuery}"
-                    </div>
-                  </div>
-                ) : searchQuery.length >= 2 ? (
-                  <div className="p-6 text-center text-muted-foreground">
-                    <p>No results found for "{searchQuery}"</p>
-                    <button
-                      className="mt-2 text-primary hover:text-primary/80 text-sm font-medium"
-                      onClick={() => navigateTo("/new-memory")}
-                    >
-                      + Add a new memory
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </div>
+          {/* Search Bar */}
+          <SearchBar
+            placeholder="Search your memories..."
+            searchFunction={searchMemories}
+            renderResult={renderMemoryResult}
+            onResultClick={handleResultClick}
+            onViewAllResults={handleViewAllResults}
+            className="w-2/3"
+            size="lg"
+            variant="default"
+          />
 
           {/* User Avatar */}
           <div className="flex items-center gap-3">
-            <button
-              className="bg-primary p-2 rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
-              onClick={() => navigateTo("/new-memory")}
-            >
+            <Button onClick={() => navigateTo("/new-memory")}>
               <Plus size={18} />
-            </button>
+              <span className="hidden sm:inline ml-2">New Memory</span>
+              <span className="sm:hidden ml-2">New</span>
+            </Button>
             <Avatar
               className="border-2 border-primary/30 h-10 w-10 cursor-pointer"
               onClick={() => navigateTo("/profile")}
@@ -459,7 +271,7 @@ export default function Layout({
   );
 }
 
-// Navigation Button Component with proper TypeScript typing
+// Navigation Button Component - keeping custom as it's layout-specific
 function NavButton({
   icon,
   label,

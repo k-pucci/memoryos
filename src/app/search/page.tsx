@@ -8,15 +8,8 @@ import Layout from "@/components/layout";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
 import {
   Search as SearchIcon,
-  BookOpen,
-  Globe,
-  FileText,
-  Edit,
-  Archive,
-  Calendar,
   Loader2,
   ExternalLink,
   X,
@@ -26,29 +19,19 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-
-// Simple debounce implementation
-function debounce<F extends (...args: any[]) => any>(func: F, wait: number) {
-  let timeout: NodeJS.Timeout;
-  return function (this: any, ...args: Parameters<F>) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
-
-interface MemoryResult {
-  id: string;
-  title: string;
-  category: string;
-  memory_type: string;
-  content: string;
-  summary: string;
-  tags: string[];
-  source_url: string | null;
-  created_at: string;
-  updated_at: string;
-  similarity: number;
-}
+import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  Memory,
+  MemoryResult,
+  getMemoryTypeIcon,
+  formatMemoryDate,
+  MEMORY_CATEGORIES,
+} from "@/lib/memory-utils";
+import {
+  debounce,
+  performAdvancedSearch,
+  SearchOptions,
+} from "@/lib/search-utils";
 
 interface FilterState {
   category: string | null;
@@ -122,7 +105,7 @@ function SearchContent() {
     }
   };
 
-  // Create a debounced search function
+  // Create a debounced search function using shared utility
   const debouncedSearch = React.useCallback(
     debounce((searchQuery: string, categoryFilter: string | null) => {
       performSearch(searchQuery, categoryFilter);
@@ -149,7 +132,7 @@ function SearchContent() {
     }
   };
 
-  // Function to perform the actual search
+  // Function to perform the actual search using shared utility
   const performSearch = async (
     searchQuery: string,
     categoryFilter: string | null = null
@@ -167,28 +150,18 @@ function SearchContent() {
     setError("");
 
     try {
-      const response = await fetch("/api/memories/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: searchQuery,
-          category: categoryFilter,
-          memory_type: filters.memory_type,
-          tags: filters.tags.length > 0 ? filters.tags : undefined,
-          date_from: filters.date_from,
-          date_to: filters.date_to,
-          limit: 20,
-        }),
-      });
+      const searchOptions: SearchOptions = {
+        query: searchQuery,
+        category: categoryFilter,
+        memory_type: filters.memory_type,
+        tags: filters.tags.length > 0 ? filters.tags : undefined,
+        date_from: filters.date_from,
+        date_to: filters.date_to,
+        limit: 20,
+      };
 
-      if (!response.ok) {
-        throw new Error("Search failed");
-      }
-
-      const data = await response.json();
-      setResults(data.results || []);
+      const searchResults = await performAdvancedSearch(searchOptions);
+      setResults(searchResults);
     } catch (error: any) {
       console.error("Error searching memories:", error);
       setError(error.message || "Search failed");
@@ -285,26 +258,6 @@ function SearchContent() {
   const applyFilters = () => {
     performSearch(query, filters.category);
     setShowFilters(false);
-  };
-
-  // Function to get icon for memory type
-  const getMemoryTypeIcon = (memoryType: string) => {
-    switch (memoryType.toLowerCase()) {
-      case "note":
-        return <Edit size={16} />;
-      case "link":
-        return <Globe size={16} />;
-      case "document":
-        return <FileText size={16} />;
-      case "analysis":
-        return <SearchIcon size={16} />;
-      case "concept":
-        return <BookOpen size={16} />;
-      case "event":
-        return <Calendar size={16} />;
-      default:
-        return <Archive size={16} />;
-    }
   };
 
   // Helper function to check if filters are active
@@ -461,12 +414,11 @@ function SearchContent() {
                   }
                 >
                   <option value="">All Categories</option>
-                  <option value="Research">Research</option>
-                  <option value="Product">Product</option>
-                  <option value="Meeting">Meeting</option>
-                  <option value="Learning">Learning</option>
-                  <option value="Idea">Idea</option>
-                  <option value="Task">Task</option>
+                  {MEMORY_CATEGORIES.slice(1).map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -631,10 +583,7 @@ function SearchContent() {
                                   {memory.category}
                                 </span>
                                 <span className="text-sm text-muted-foreground">
-                                  {formatDistanceToNow(
-                                    new Date(memory.created_at),
-                                    { addSuffix: true }
-                                  )}
+                                  {formatMemoryDate(memory.created_at)}
                                 </span>
                               </div>
                             </div>
@@ -703,40 +652,24 @@ function SearchContent() {
                 ) : (
                   !isSearching &&
                   (query || hasActiveFilters()) && (
-                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                      <SearchIcon
-                        size={48}
-                        className="text-muted-foreground/50 mb-4"
-                      />
-                      <h3 className="text-lg font-medium text-foreground mb-2">
-                        No memories found
-                      </h3>
-                      <p className="text-muted-foreground mb-6">
-                        Try a different search term or add a new memory
-                      </p>
-                      <button
-                        onClick={() => router.push("/new-memory")}
-                        className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
-                      >
-                        Add New Memory
-                      </button>
-                    </div>
+                    <EmptyState
+                      icon={<SearchIcon size={48} />}
+                      title="No memories found"
+                      description="Try a different search term or add a new memory"
+                      action={{
+                        label: "Add New Memory",
+                        onClick: () => router.push("/new-memory"),
+                      }}
+                    />
                   )
                 )}
 
                 {!isSearching && !query && !hasActiveFilters() && (
-                  <div className="flex flex-col items-center justify-center h-64 text-center">
-                    <SearchIcon
-                      size={48}
-                      className="text-muted-foreground/50 mb-4"
-                    />
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      Search your memory stack
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Start typing to search through your memories
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={<SearchIcon size={48} />}
+                    title="Search your memory stack"
+                    description="Start typing to search through your memories"
+                  />
                 )}
               </div>
             </ScrollArea>

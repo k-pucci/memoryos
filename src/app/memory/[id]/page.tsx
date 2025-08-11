@@ -9,6 +9,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { formatDistanceToNow } from "date-fns";
 import {
   Loader2,
@@ -23,8 +26,10 @@ import {
   CheckCircle,
   AlertCircle,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getMemoryTypeClass, MEMORY_CATEGORIES } from "@/lib/memory-utils";
 
 interface Memory {
   id: string;
@@ -68,6 +73,142 @@ const getCategoryClasses = (category: string) => {
     border: `memory-${categoryKey}-border`,
   };
 };
+
+// Custom Select Component
+interface SelectProps {
+  name: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  className?: string;
+  required?: boolean;
+  placeholder?: string;
+}
+
+function CustomSelect({
+  name,
+  value,
+  onChange,
+  options,
+  className,
+  required,
+  placeholder,
+}: SelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState(() => {
+    const selected = options.find((option) => option.value === value);
+    return selected ? selected.label : placeholder || "Select...";
+  });
+
+  const handleSelect = (optionValue: string, optionLabel: string) => {
+    onChange(optionValue);
+    setSelectedLabel(optionLabel);
+    setIsOpen(false);
+  };
+
+  const toggleOpen = () => setIsOpen(!isOpen);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(`[data-select="${name}"]`)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen, name]);
+
+  return (
+    <div className="relative" data-select={name}>
+      <button
+        type="button"
+        onClick={toggleOpen}
+        className={cn(
+          "w-full h-10 px-3 py-2 text-sm bg-card border border-border rounded-md text-foreground",
+          "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
+          "cursor-pointer transition-all text-left",
+          "hover:border-primary/50",
+          isOpen && "border-primary ring-2 ring-primary/20",
+          className
+        )}
+      >
+        <span className={value ? "text-foreground" : "text-muted-foreground"}>
+          {selectedLabel}
+        </span>
+        <ChevronDown
+          size={16}
+          className={cn(
+            "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-transform",
+            isOpen && "rotate-180"
+          )}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleSelect(option.value, option.label)}
+              className={cn(
+                "w-full px-3 py-2 text-sm text-left hover:bg-muted transition-colors",
+                "focus:outline-none focus:bg-muted",
+                option.value === value &&
+                  "bg-primary/10 text-primary font-medium"
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Notification Component
+interface NotificationProps {
+  type: "success" | "error";
+  message: string;
+  onClose: () => void;
+}
+
+function Notification({ type, message, onClose }: NotificationProps) {
+  return (
+    <div className="fixed top-4 right-4 z-50">
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border animate-in slide-in-from-top-2 duration-300",
+          type === "success"
+            ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-400"
+            : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400"
+        )}
+      >
+        {type === "success" ? (
+          <CheckCircle size={20} />
+        ) : (
+          <AlertCircle size={20} />
+        )}
+        <span className="font-medium">{message}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="ml-2 hover:opacity-70 h-6 w-6"
+        >
+          <X size={16} />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function MemoryDetailPage() {
   const router = useRouter();
@@ -179,11 +320,14 @@ export default function MemoryDetailPage() {
 
   // Handle form input changes
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle select changes
+  const handleSelectChange = (name: string, value: string) => {
     setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -274,6 +418,22 @@ export default function MemoryDetailPage() {
     router.back();
   };
 
+  // Category options - using shared categories
+  const categoryOptions = MEMORY_CATEGORIES.slice(1).map((cat) => ({
+    value: cat,
+    label: cat,
+  }));
+
+  // Memory type options
+  const memoryTypeOptions = [
+    { value: "note", label: "Note" },
+    { value: "link", label: "Link" },
+    { value: "document", label: "Document" },
+    { value: "analysis", label: "Analysis" },
+    { value: "concept", label: "Concept" },
+    { value: "event", label: "Event" },
+  ];
+
   if (isLoading) {
     return (
       <Layout currentPage="">
@@ -302,13 +462,10 @@ export default function MemoryDetailPage() {
                 </p>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={goBack}
-                  className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer"
-                >
+                <Button variant="outline" onClick={goBack}>
                   <ArrowLeft size={18} />
-                  <span>Go Back</span>
-                </button>
+                  <span className="ml-2">Go Back</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -317,25 +474,18 @@ export default function MemoryDetailPage() {
             <div className="p-6 pt-4">
               <Card className="bg-card border-border card-shadow">
                 <CardContent className="p-6">
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Archive
-                      size={48}
-                      className="text-muted-foreground/50 mb-4"
-                    />
-                    <h2 className="text-lg font-medium text-foreground mb-2">
-                      Memory Not Found
-                    </h2>
-                    <p className="text-muted-foreground mb-6">
-                      {error ||
-                        "This memory may have been deleted or doesn't exist"}
-                    </p>
-                    <button
-                      onClick={goBack}
-                      className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
-                    >
-                      Go Back
-                    </button>
-                  </div>
+                  <EmptyState
+                    icon={<Archive size={48} />}
+                    title="Memory Not Found"
+                    description={
+                      error ||
+                      "This memory may have been deleted or doesn't exist"
+                    }
+                    action={{
+                      label: "Go Back",
+                      onClick: goBack,
+                    }}
+                  />
                 </CardContent>
               </Card>
             </div>
@@ -352,78 +502,24 @@ export default function MemoryDetailPage() {
     <Layout currentPage="">
       {/* Custom Notification */}
       {notification && (
-        <div className="fixed top-4 right-4 z-50">
-          <div
-            className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border animate-in slide-in-from-top-2 duration-300",
-              notification.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-900/20 dark:border-emerald-700 dark:text-emerald-400"
-                : "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-700 dark:text-red-400"
-            )}
-          >
-            {notification.type === "success" ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertCircle size={20} />
-            )}
-            <span className="font-medium">{notification.message}</span>
-            <button
-              onClick={() => setNotification(null)}
-              className="ml-2 hover:opacity-70 transition-opacity"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
+        <Notification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
       )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background border border-border rounded-lg shadow-lg max-w-md w-full p-6 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-destructive/10 rounded-full">
-                <Trash2 size={20} className="text-destructive" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Delete Memory
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-
-            <p className="text-foreground mb-6">
-              Are you sure you want to delete "{memory?.title}"? This will
-              permanently remove the memory from your collection.
-            </p>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 hover:bg-red-500/20 hover:border-red-500/30 transition-all cursor-pointer dark:text-red-400"
-              >
-                {isDeleting ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-                Delete Memory
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Memory"
+        itemName={memory?.title || ""}
+        itemType="memory"
+        isDeleting={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
 
       <div className="flex flex-col h-full max-h-screen overflow-hidden">
         {/* Fixed Header Section */}
@@ -439,58 +535,45 @@ export default function MemoryDetailPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={goBack}
-                className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer"
-              >
+              <Button variant="outline" onClick={goBack}>
                 <ArrowLeft size={18} />
-                <span className="hidden sm:inline">Back</span>
-              </button>
+                <span className="hidden sm:inline ml-2">Back</span>
+              </Button>
 
               {!isEditing ? (
                 <>
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-all text-primary cursor-pointer"
-                  >
+                  <Button variant="outline" onClick={() => setIsEditing(true)}>
                     <Edit size={18} />
-                    <span className="hidden sm:inline">Edit</span>
-                  </button>
+                    <span className="hidden sm:inline ml-2">Edit</span>
+                  </Button>
 
-                  <button
+                  <Button
+                    variant="destructive"
                     onClick={handleDelete}
                     disabled={isDeleting}
-                    className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border border-destructive/20 rounded-lg hover:bg-destructive/20 transition-all text-destructive cursor-pointer"
                   >
                     {isDeleting ? (
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
                       <Trash2 size={18} />
                     )}
-                    <span className="hidden sm:inline">Delete</span>
-                  </button>
+                    <span className="hidden sm:inline ml-2">Delete</span>
+                  </Button>
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="flex items-center gap-2 px-4 py-2 bg-muted border border-border rounded-lg hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20 transition-all cursor-pointer"
-                  >
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>
                     Cancel
-                  </button>
+                  </Button>
 
-                  <button
-                    onClick={handleSubmit}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
-                  >
+                  <Button onClick={handleSubmit} disabled={isSaving}>
                     {isSaving ? (
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
                       <Save size={18} />
                     )}
-                    <span className="hidden sm:inline">Save</span>
-                  </button>
+                    <span className="hidden sm:inline ml-2">Save</span>
+                  </Button>
                 </>
               )}
             </div>
@@ -506,9 +589,9 @@ export default function MemoryDetailPage() {
                 <Card className="bg-card border-border card-shadow">
                   <CardContent className="p-6">
                     {isEditing ? (
-                      <form onSubmit={handleSubmit} className="space-y-4">
+                      <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             Title
                           </label>
                           <Input
@@ -516,103 +599,102 @@ export default function MemoryDetailPage() {
                             value={editForm.title}
                             onChange={handleInputChange}
                             required
-                            className="bg-background border-border text-foreground"
+                            placeholder="Enter memory title..."
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">
+                            <label className="block text-sm font-medium text-foreground mb-2">
                               Category
                             </label>
-                            <select
+                            <CustomSelect
                               name="category"
                               value={editForm.category}
-                              onChange={handleInputChange}
-                              className="w-full px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                              onChange={(value) =>
+                                handleSelectChange("category", value)
+                              }
+                              options={categoryOptions}
                               required
-                            >
-                              <option value="Research">Research</option>
-                              <option value="Product">Product</option>
-                              <option value="Meeting">Meeting</option>
-                              <option value="Learning">Learning</option>
-                              <option value="Idea">Idea</option>
-                              <option value="Task">Task</option>
-                            </select>
+                              placeholder="Select category..."
+                            />
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-1">
+                            <label className="block text-sm font-medium text-foreground mb-2">
                               Memory Type
                             </label>
-                            <select
+                            <CustomSelect
                               name="memory_type"
                               value={editForm.memory_type}
-                              onChange={handleInputChange}
-                              className="w-full px-3 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                              onChange={(value) =>
+                                handleSelectChange("memory_type", value)
+                              }
+                              options={memoryTypeOptions}
                               required
-                            >
-                              <option value="Note">Note</option>
-                              <option value="Link">Link</option>
-                              <option value="Document">Document</option>
-                              <option value="Analysis">Analysis</option>
-                              <option value="Concept">Concept</option>
-                              <option value="Event">Event</option>
-                            </select>
+                              placeholder="Select memory type..."
+                            />
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             Content
                           </label>
-                          <textarea
+                          <Textarea
                             name="content"
                             value={editForm.content}
                             onChange={handleInputChange}
-                            className="w-full h-48 px-3 py-2 bg-background border border-border rounded-md text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                            className="h-40 resize-none"
+                            placeholder="Enter your memory content..."
                             required
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
-                            Tags (comma separated)
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Tags{" "}
+                            <span className="text-muted-foreground font-normal">
+                              (comma separated)
+                            </span>
                           </label>
                           <Input
                             name="tags"
                             value={editForm.tags}
                             onChange={handleInputChange}
-                            className="bg-background border-border text-foreground"
+                            placeholder="tag1, tag2, tag3..."
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-foreground mb-1">
-                            Source URL (optional)
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            Source URL{" "}
+                            <span className="text-muted-foreground font-normal">
+                              (optional)
+                            </span>
                           </label>
                           <Input
                             name="source_url"
                             value={editForm.source_url}
                             onChange={handleInputChange}
-                            className="bg-background border-border text-foreground"
+                            placeholder="https://example.com"
                           />
                         </div>
 
-                        <div className="flex items-center">
+                        <div className="flex items-center space-x-3 pt-2">
                           <input
                             type="checkbox"
                             id="has_reminder"
                             name="has_reminder"
                             checked={editForm.has_reminder}
                             onChange={handleCheckboxChange}
-                            className="w-4 h-4 bg-background border-border rounded text-primary focus:ring-primary/20"
+                            className="w-4 h-4 bg-card border-border rounded text-primary focus:ring-primary/20 focus:ring-2"
                           />
                           <label
                             htmlFor="has_reminder"
-                            className="ml-2 text-sm text-foreground"
+                            className="text-sm font-medium text-foreground cursor-pointer"
                           >
-                            Set reminder
+                            Set reminder for this memory
                           </label>
                         </div>
                       </form>
@@ -768,15 +850,11 @@ export default function MemoryDetailPage() {
                         })}
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <BookOpen
-                          size={40}
-                          className="text-muted-foreground/50 mb-4"
-                        />
-                        <p className="text-muted-foreground">
-                          No related memories found
-                        </p>
-                      </div>
+                      <EmptyState
+                        icon={<BookOpen size={40} />}
+                        title="No related memories found"
+                        description="No similar memories were found for this content"
+                      />
                     )}
                   </div>
                 )}

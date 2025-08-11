@@ -1,98 +1,16 @@
-// /src/app/library/page.tsx
+//src/app/library/page.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  BookOpen,
-  Search,
-  Clock,
-  ArrowUpRight,
-  Loader2,
-  Plus,
-  X,
-  Edit,
-  Globe,
-  FileText,
-  Calendar,
-  Archive,
-  Lightbulb,
-  CheckSquare,
-  BarChart3,
-  Puzzle,
-  Rocket,
-  GraduationCap,
-  Microscope,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { BookOpen, Search, Clock, Loader2, X, Archive } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Layout from "@/components/layout";
-import { cn } from "@/lib/utils";
-
-// Types
-interface Memory {
-  id: string;
-  title: string;
-  category: string;
-  memory_type: string;
-  content: string;
-  summary?: string;
-  tags?: string[];
-  source_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-// Memory type to icon mapping
-const getMemoryTypeIcon = (memoryType: string) => {
-  const iconMap: { [key: string]: React.ReactNode } = {
-    note: <Edit size={14} />,
-    document: <FileText size={14} />,
-    link: <Globe size={14} />,
-    analysis: <BarChart3 size={14} />,
-    concept: <Puzzle size={14} />,
-    event: <Calendar size={14} />,
-    research: <Microscope size={14} />,
-    product: <Rocket size={14} />,
-    meeting: <Calendar size={14} />,
-    learning: <GraduationCap size={14} />,
-    idea: <Lightbulb size={14} />,
-    task: <CheckSquare size={14} />,
-  };
-
-  return iconMap[memoryType.toLowerCase()] || <Archive size={14} />;
-};
-
-// Get memory type CSS class name
-const getMemoryTypeClass = (memoryType: string, category: string) => {
-  const type = memoryType.toLowerCase();
-  const cat = category.toLowerCase();
-
-  const memoryTypes = [
-    "research",
-    "product",
-    "meeting",
-    "learning",
-    "idea",
-    "task",
-    "note",
-    "document",
-    "link",
-    "analysis",
-    "concept",
-    "event",
-  ];
-
-  if (memoryTypes.includes(type)) {
-    return `memory-${type}`;
-  } else if (memoryTypes.includes(cat)) {
-    return `memory-${cat}`;
-  }
-
-  return "memory-note"; // fallback
-};
+import { MemoryCard } from "@/components/shared/MemoryCard";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Memory, MEMORY_CATEGORIES } from "@/lib/memory-utils";
 
 export default function LibraryPage() {
   const router = useRouter();
@@ -104,23 +22,6 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [error, setError] = useState("");
-
-  // Available categories based on your memory types
-  const categories = [
-    "All",
-    "Research",
-    "Product",
-    "Meeting",
-    "Learning",
-    "Idea",
-    "Task",
-    "Note",
-    "Document",
-    "Link",
-    "Analysis",
-    "Concept",
-    "Event",
-  ];
 
   // Fetch memories on component mount
   useEffect(() => {
@@ -204,6 +105,10 @@ export default function LibraryPage() {
     setSelectedCategory(category);
   };
 
+  const handleMemoryClick = (id: string) => {
+    router.push(`/memory/${id}`);
+  };
+
   // Group memories by recency
   const groupMemoriesByRecency = (memories: Memory[]) => {
     const now = new Date();
@@ -280,16 +185,7 @@ export default function LibraryPage() {
                 Access your collected knowledge and memories
               </p>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => router.push("/new-memory")}
-                className="flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
-              >
-                <Plus size={18} />
-                <span className="hidden sm:inline">New Memory</span>
-                <span className="sm:hidden">New</span>
-              </button>
-            </div>
+            <div className="flex gap-3"></div>
           </div>
 
           {/* Search */}
@@ -305,29 +201,28 @@ export default function LibraryPage() {
               className="bg-card border-border text-foreground pl-10 h-12 rounded-xl focus:border-primary focus:ring focus:ring-primary/20 transition-all card-shadow"
             />
             {searchQuery && (
-              <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={clearSearch}
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground h-8 w-8"
               >
                 <X size={18} />
-              </button>
+              </Button>
             )}
           </div>
 
-          {/* Categories */}
+          {/* Categories - Using Button component */}
           <div className="flex flex-wrap gap-2">
-            {categories.map((category, index) => (
-              <button
+            {MEMORY_CATEGORIES.map((category, index) => (
+              <Button
                 key={index}
+                variant={selectedCategory === category ? "default" : "outline"}
+                size="sm"
                 onClick={() => handleCategorySelect(category)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer ${
-                  selectedCategory === category
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-muted text-muted-foreground hover:bg-brand-coral/10 hover:text-brand-coral hover:border-brand-coral/20"
-                }`}
               >
                 {category}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -347,28 +242,23 @@ export default function LibraryPage() {
           <ScrollArea className="h-full">
             <div className="p-6 pt-4">
               {filteredMemories.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <Archive
-                    size={48}
-                    className="text-muted-foreground/50 mb-4"
-                  />
-                  <h3 className="text-lg font-medium text-foreground mb-2">
-                    {searchQuery || selectedCategory !== "All"
+                <EmptyState
+                  icon={<Archive size={48} />}
+                  title={
+                    searchQuery || selectedCategory !== "All"
                       ? "No memories found"
-                      : "No memories yet"}
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    {searchQuery || selectedCategory !== "All"
+                      : "No memories yet"
+                  }
+                  description={
+                    searchQuery || selectedCategory !== "All"
                       ? "Try a different search term or category"
-                      : "Start building your memory library"}
-                  </p>
-                  <button
-                    onClick={() => router.push("/new-memory")}
-                    className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
-                  >
-                    Add Your First Memory
-                  </button>
-                </div>
+                      : "Start building your memory library"
+                  }
+                  action={{
+                    label: "Add Your First Memory",
+                    onClick: () => router.push("/new-memory"),
+                  }}
+                />
               ) : (
                 <div className="space-y-8">
                   {recentMemories.length > 0 && (
@@ -382,7 +272,7 @@ export default function LibraryPage() {
                           <MemoryCard
                             key={memory.id}
                             memory={memory}
-                            onView={() => router.push(`/memory/${memory.id}`)}
+                            onClick={handleMemoryClick}
                           />
                         ))}
                       </div>
@@ -402,7 +292,7 @@ export default function LibraryPage() {
                           <MemoryCard
                             key={memory.id}
                             memory={memory}
-                            onView={() => router.push(`/memory/${memory.id}`)}
+                            onClick={handleMemoryClick}
                           />
                         ))}
                       </div>
@@ -415,105 +305,5 @@ export default function LibraryPage() {
         </div>
       </div>
     </Layout>
-  );
-}
-
-// Memory Card Component
-interface MemoryCardProps {
-  memory: Memory;
-  onView: () => void;
-}
-
-function MemoryCard({ memory, onView }: MemoryCardProps) {
-  const memoryClass = getMemoryTypeClass(memory.memory_type, memory.category);
-  const icon = getMemoryTypeIcon(memory.memory_type);
-  const displayContent =
-    memory.summary ||
-    memory.content.substring(0, 120) +
-      (memory.content.length > 120 ? "..." : "");
-
-  return (
-    <Card
-      className={cn(
-        "bg-card border-border overflow-hidden relative group hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer card-shadow hover:card-shadow-lg"
-      )}
-      onClick={onView}
-    >
-      {/* Top accent line */}
-      <div
-        className={`absolute top-0 left-0 w-full h-1 ${memoryClass}-bg`}
-      ></div>
-
-      <CardContent className="p-4 pt-5">
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center space-x-2">
-            <div className={`${memoryClass} opacity-70`}>{icon}</div>
-            <span
-              className={cn(
-                "text-xs px-2 py-1 rounded-full font-medium",
-                `${memoryClass}-bg ${memoryClass}`
-              )}
-            >
-              {memory.memory_type}
-            </span>
-          </div>
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ArrowUpRight size={16} className="text-muted-foreground" />
-          </div>
-        </div>
-
-        <h2 className="font-semibold text-foreground mb-2 line-clamp-2 transition-colors">
-          {memory.title}
-        </h2>
-
-        {displayContent && (
-          <p className="text-sm text-muted-foreground line-clamp-3 mb-2 transition-colors">
-            {displayContent}
-          </p>
-        )}
-
-        {memory.tags && memory.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {memory.tags.slice(0, 3).map((tag, index) => (
-              <span
-                key={index}
-                className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-md font-medium"
-              >
-                {tag}
-              </span>
-            ))}
-            {memory.tags.length > 3 && (
-              <span className="text-xs text-muted-foreground font-medium">
-                +{memory.tags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
-
-        <div className="flex items-center justify-between text-xs">
-          <span
-            className={cn(
-              "text-xs px-2 py-1 rounded-full font-medium",
-              `${memoryClass}-bg ${memoryClass}`
-            )}
-          >
-            {memory.category}
-          </span>
-          <div className="flex items-center text-muted-foreground gap-1">
-            <Clock size={12} />
-            <span className="hidden sm:inline">
-              {formatDistanceToNow(new Date(memory.created_at), {
-                addSuffix: true,
-              })}
-            </span>
-            <span className="sm:hidden">
-              {formatDistanceToNow(new Date(memory.created_at), {
-                addSuffix: true,
-              }).replace(" ago", "")}
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

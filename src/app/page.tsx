@@ -6,56 +6,27 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowRight,
-  Clock,
   Loader2,
   TrendingUp,
   BookOpen,
   Brain,
   Zap,
-  Plus,
   Tag,
-  Calendar,
   BarChart3,
   Activity,
-  Star,
   Archive,
 } from "lucide-react";
 import Layout from "@/components/layout";
 import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
 import { createClient } from "@supabase/supabase-js";
-import { cn } from "@/lib/utils";
-import { getCategoryIcon } from "@/components/icons/CategoryIcons";
+import { MemoryCard } from "@/components/shared/MemoryCard";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Memory } from "@/lib/memory-utils";
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Memory Card Component
-interface MemoryCardProps {
-  id: string;
-  title: string;
-  category: string;
-  content?: string;
-  items?: string[];
-  memoryType: string;
-  createdAt: string;
-  onClick: (id: string) => void;
-}
-
-// Memory data type
-interface Memory {
-  id: string;
-  title: string;
-  category: string;
-  memory_type: string;
-  content: string;
-  summary: string;
-  tags: string[];
-  created_at: string;
-  updated_at: string;
-}
 
 // Stats interface
 interface Stats {
@@ -64,35 +35,6 @@ interface Stats {
   recentActivity: number;
   popularTags: { tag: string; count: number }[];
 }
-
-// Get memory type class for theming
-const getMemoryTypeClass = (memoryType: string, category: string) => {
-  const type = memoryType.toLowerCase();
-  const cat = category.toLowerCase();
-
-  const memoryTypes = [
-    "research",
-    "product",
-    "meeting",
-    "learning",
-    "idea",
-    "task",
-    "note",
-    "document",
-    "link",
-    "analysis",
-    "concept",
-    "event",
-  ];
-
-  if (memoryTypes.includes(type)) {
-    return `memory-${type}`;
-  } else if (memoryTypes.includes(cat)) {
-    return `memory-${cat}`;
-  }
-
-  return "memory-note"; // fallback
-};
 
 export default function HomePage() {
   const router = useRouter();
@@ -170,31 +112,6 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  // Process memory content
-  const processMemoryContent = (
-    memory: Memory
-  ): { content: string; items: string[] } => {
-    const lines = memory.content.split("\n");
-    const bulletPattern = /^[-*•]\s+(.+)$/;
-
-    const items: string[] = [];
-    let regularContent = "";
-
-    lines.forEach((line) => {
-      const match = line.match(bulletPattern);
-      if (match && match[1]) {
-        items.push(match[1].trim());
-      } else if (line.trim()) {
-        regularContent += line + " ";
-      }
-    });
-
-    return {
-      content: regularContent.trim() || memory.summary,
-      items: items,
-    };
-  };
-
   // Navigation functions
   const navigateToMemory = (id: string) => {
     router.push(`/memory/${id}`);
@@ -227,24 +144,7 @@ export default function HomePage() {
                 Here's what's happening with your memories
               </p>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={openAIAgents}
-                className="flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-lg hover:bg-primary/20 transition-all text-primary cursor-pointer"
-              >
-                <Brain size={18} />
-                <span className="hidden sm:inline">AI Agents</span>
-                <span className="sm:hidden">AI</span>
-              </button>
-              <button
-                onClick={createNewMemory}
-                className="flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer"
-              >
-                <Plus size={18} />
-                <span className="hidden sm:inline">New Memory</span>
-                <span className="sm:hidden">New</span>
-              </button>
-            </div>
+            <div className="flex gap-3"></div>
           </div>
 
           {/* Stats Cards */}
@@ -276,8 +176,8 @@ export default function HomePage() {
                       {stats.totalCategories}
                     </p>
                   </div>
-                  <div className="p-2 bg-brand-coral/10 rounded-lg">
-                    <BarChart3 size={20} className="brand-coral" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <BarChart3 size={20} className="text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -292,8 +192,8 @@ export default function HomePage() {
                       {stats.recentActivity}
                     </p>
                   </div>
-                  <div className="p-2 bg-brand-sage/10 rounded-lg">
-                    <Activity size={20} className="brand-sage" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Activity size={20} className="text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -310,8 +210,8 @@ export default function HomePage() {
                       {stats.popularTags.length}
                     </p>
                   </div>
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <Tag size={20} className="text-accent" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Tag size={20} className="text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -355,43 +255,24 @@ export default function HomePage() {
                       </div>
                     ) : memories.length > 0 ? (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
-                        {memories.map((memory) => {
-                          const { content, items } =
-                            processMemoryContent(memory);
-                          return (
-                            <MemoryCard
-                              key={memory.id}
-                              id={memory.id}
-                              title={memory.title}
-                              category={memory.category}
-                              content={content}
-                              items={items}
-                              memoryType={memory.memory_type}
-                              createdAt={memory.created_at}
-                              onClick={navigateToMemory}
-                            />
-                          );
-                        })}
+                        {memories.map((memory) => (
+                          <MemoryCard
+                            key={memory.id}
+                            memory={memory}
+                            onClick={navigateToMemory}
+                          />
+                        ))}
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <Archive
-                          size={48}
-                          className="text-muted-foreground/50 mb-4"
-                        />
-                        <h3 className="text-lg font-medium text-foreground mb-2">
-                          No memories found
-                        </h3>
-                        <p className="text-muted-foreground mb-6">
-                          Start building your knowledge base
-                        </p>
-                        <button
-                          onClick={createNewMemory}
-                          className="px-6 py-3 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer font-medium"
-                        >
-                          Add Your First Memory
-                        </button>
-                      </div>
+                      <EmptyState
+                        icon={<Archive />}
+                        title="No memories found"
+                        description="Start building your knowledge base"
+                        action={{
+                          label: "Add Your First Memory",
+                          onClick: createNewMemory,
+                        }}
+                      />
                     )}
                   </div>
                 </ScrollArea>
@@ -411,12 +292,6 @@ export default function HomePage() {
                             <Tag size={16} className="text-primary" />
                             Popular Tags
                           </h3>
-                          <button
-                            onClick={() => router.push("/library")}
-                            className="text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                          >
-                            View all
-                          </button>
                         </div>
 
                         {stats.popularTags.length > 0 ? (
@@ -424,7 +299,7 @@ export default function HomePage() {
                             {stats.popularTags.map((tagData, index) => (
                               <div
                                 key={index}
-                                className="flex items-center justify-between p-2 bg-muted rounded-lg hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer"
+                                className="flex items-center justify-between p-2 bg-muted rounded-lg"
                               >
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -432,7 +307,7 @@ export default function HomePage() {
                                     {tagData.tag}
                                   </span>
                                 </div>
-                                <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                                <span className="text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-full">
                                   {tagData.count}
                                 </span>
                               </div>
@@ -524,90 +399,5 @@ export default function HomePage() {
         </div>
       </div>
     </Layout>
-  );
-}
-
-function MemoryCard({
-  id,
-  title,
-  category,
-  content = "",
-  items = [],
-  memoryType,
-  createdAt,
-  onClick,
-}: MemoryCardProps) {
-  const memoryClass = getMemoryTypeClass(memoryType, category);
-
-  return (
-    <Card
-      className={cn(
-        "bg-card border-border overflow-hidden relative group hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer card-shadow hover:card-shadow-lg"
-      )}
-      onClick={() => onClick(id)}
-    >
-      {/* Top accent line */}
-      <div
-        className={`absolute top-0 left-0 w-full h-1 ${memoryClass}-bg`}
-      ></div>
-
-      <CardContent className="p-4 pt-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-6 h-6">
-              {getCategoryIcon(category, 20, "text-muted-foreground")}
-            </div>
-            <span
-              className={cn(
-                "text-xs px-2 py-1 rounded-full font-medium",
-                `${memoryClass}-bg ${memoryClass}`
-              )}
-            >
-              {category}
-            </span>
-          </div>
-          <div className="flex items-center text-xs text-muted-foreground gap-1">
-            <Clock size={12} />
-            <span className="hidden sm:inline">
-              {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-            </span>
-            <span className="sm:hidden">
-              {formatDistanceToNow(new Date(createdAt), {
-                addSuffix: true,
-              }).replace(" ago", "")}
-            </span>
-          </div>
-        </div>
-
-        <h2 className="font-semibold text-foreground mb-2 line-clamp-2 transition-colors">
-          {title}
-        </h2>
-
-        {content && (
-          <p className="text-sm text-muted-foreground line-clamp-3 mb-2 transition-colors">
-            {content}
-          </p>
-        )}
-
-        {items && items.length > 0 && (
-          <ul className="list-disc list-inside text-sm text-muted-foreground ml-1 space-y-1 transition-colors">
-            {items.slice(0, 2).map((item: string, index: number) => (
-              <li key={index} className="line-clamp-1">
-                {item}
-              </li>
-            ))}
-            {items.length > 2 && (
-              <li className="text-muted-foreground/80">
-                +{items.length - 2} more items
-              </li>
-            )}
-          </ul>
-        )}
-
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ArrowRight size={16} className="text-muted-foreground" />
-        </div>
-      </CardContent>
-    </Card>
   );
 }
