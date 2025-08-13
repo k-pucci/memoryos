@@ -1,6 +1,6 @@
-// /app/api/chat/unified/route.ts
+// app/api/chat/unified/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { UnifiedChatManager } from "@/lib/agents/unified-chat";
+import { MemoryAssistant } from "@/lib/agents/unified-chat";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const chatManager = new UnifiedChatManager();
+const memoryAssistant = new MemoryAssistant();
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       session_id,
     } = await request.json();
 
+    // Validate input
     if (!message || message.trim() === "") {
       return NextResponse.json(
         { error: "Message is required" },
@@ -26,39 +27,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("💬 Unified chat request:", message);
+    console.log("💬 Memory Assistant request:", message);
 
-    // Get user ID (you'll need to implement auth)
-    const userId = "temp-user-id"; // Replace with actual auth
-
-    // Process the message through unified chat manager
-    const result = await chatManager.processMessage(
+    // Process the message through memory assistant
+    const result = await memoryAssistant.processMessage(
       message,
       embedding,
-      chat_history,
-      userId
+      chat_history
     );
 
     // Save message to chat history (optional)
     if (session_id) {
-      await saveMessageToHistory(session_id, message, result, userId);
+      await saveMessageToHistory(session_id, message, result);
     }
 
     return NextResponse.json({
       response: result.response,
       agent_used: result.agent_used,
-      agent_id: result.agent_id,
       sources: result.sources,
-      mentioned_agents: result.mentioned_agents,
       metadata: {
-        search_strategy: result.search_strategy,
         memory_count: result.memory_count,
+        search_performed: result.search_performed,
       },
     });
   } catch (error) {
-    console.error("❌ Unified chat error:", error);
+    console.error("❌ Memory Assistant error:", error);
     return NextResponse.json(
-      { error: "Chat processing failed" },
+      {
+        error: "Chat processing failed",
+        details:
+          process.env.NODE_ENV === "development" ? String(error) : undefined,
+      },
       { status: 500 }
     );
   }
@@ -67,8 +66,7 @@ export async function POST(request: NextRequest) {
 async function saveMessageToHistory(
   sessionId: string,
   userMessage: string,
-  aiResult: any,
-  userId: string
+  aiResult: any
 ) {
   try {
     // Save user message
@@ -76,7 +74,6 @@ async function saveMessageToHistory(
       session_id: sessionId,
       content: userMessage,
       role: "user",
-      mentioned_agents: aiResult.mentioned_agents,
     });
 
     // Save AI response
@@ -88,13 +85,9 @@ async function saveMessageToHistory(
       sources: aiResult.sources,
     });
 
-    // Update agent usage analytics
-    if (aiResult.agent_id) {
-      await supabase.rpc("increment_agent_usage", {
-        agent_id: aiResult.agent_id,
-      });
-    }
+    console.log(`💾 Saved chat messages for session: ${sessionId}`);
   } catch (error) {
-    console.error("Error saving chat history:", error);
+    console.error("❌ Error saving chat history:", error);
+    // Don't throw - this shouldn't break the main chat flow
   }
 }

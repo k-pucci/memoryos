@@ -1,4 +1,4 @@
-// /lib/agents/unified-chat.ts
+// lib/agents/unified-chat.ts
 import { createClient } from "@supabase/supabase-js";
 import Groq from "groq-sdk";
 
@@ -11,423 +11,280 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY!,
 });
 
-// User-created agent interface
-interface UserAgent {
-  id: string;
-  name: string;
-  description: string;
-  expertise: string[]; // Keywords for routing
-  system_prompt: string;
-  model: string;
-  avatar?: string;
-  created_by?: string;
-  search_config: {
-    threshold: number;
-    categories: string[];
-    time_preference: "recent" | "all" | "archive";
-  };
-}
-
-// Chat message with agent context
 interface ChatMessage {
   id: string;
   content: string;
   role: "user" | "assistant";
-  agent_used?: string;
-  mentioned_agents?: string[];
-  sources?: any[];
   timestamp: string;
 }
 
-export class UnifiedChatManager {
+interface Memory {
+  id: string;
+  title: string;
+  category: string;
+  memory_type: string;
+  content: string;
+  summary?: string;
+  tags?: string[];
+  source_url?: string;
+  created_at: string;
+  updated_at: string;
+  meeting_date?: string;
+  attendees?: string[];
+  action_items?: string[];
+  next_steps?: string[];
+  priority?: string;
+  status?: string;
+  similarity?: number;
+}
+
+export class MemoryAssistant {
+  private readonly systemPrompt = `You are a Memory Assistant, a helpful AI that specializes in organizing, searching, and summarizing personal memories and knowledge.
+
+Your capabilities:
+- Search through memories using semantic similarity
+- Summarize memories by category, date, or topic
+- Extract insights and patterns from stored information
+- Help organize and understand personal knowledge
+- Provide actionable insights from meeting notes and action items
+
+Guidelines:
+- Always reference specific memories when providing information
+- Use memory titles, dates, and categories to cite your sources
+- When summarizing, organize information clearly with headings
+- Highlight important action items, next steps, and deadlines
+- Be concise but comprehensive in your responses
+- If you can't find relevant memories, say so clearly
+
+Remember: You're working with the user's personal memory collection, so be helpful in organizing and surfacing their stored knowledge.`;
+
   async processMessage(
     message: string,
     embedding: number[],
-    chatHistory: ChatMessage[] = [],
-    userId: string
+    chatHistory: ChatMessage[] = []
   ) {
-    console.log("💬 Processing unified chat message:", message);
+    console.log("💬 Processing memory assistant message:", message);
 
-    // Step 1: Parse @mentions and detect routing intent
-    const parsedMessage = this.parseMessage(message);
-    console.log("🎯 Parsed message:", parsedMessage);
+    // Search for relevant memories
+    const relevantMemories = await this.searchMemories(message, embedding);
+    console.log(`🔍 Found ${relevantMemories.length} relevant memories`);
 
-    // Step 2: Get user's available agents
-    const userAgents = await this.getUserAgents(userId);
-    console.log(`📊 Found ${userAgents.length} available agents`);
-
-    // Step 3: Route to appropriate agent(s)
-    const selectedAgent = await this.routeToAgent(
-      parsedMessage,
-      userAgents,
-      chatHistory
-    );
-
-    console.log(`🤖 Selected agent: ${selectedAgent.name}`);
-
-    // Step 4: Search for relevant memories using agent's strategy
-    const relevantMemories = await this.searchWithAgent(
-      parsedMessage.cleanQuery,
-      embedding,
-      selectedAgent
-    );
-
-    // Step 5: Generate response with agent's personality
+    // Generate response
     const response = await this.generateResponse(
-      parsedMessage.cleanQuery,
+      message,
       relevantMemories,
-      selectedAgent,
-      chatHistory.slice(-6) // Last 6 messages for context
+      chatHistory.slice(-6) // Keep last 6 messages for context
     );
 
     return {
       response: response.content,
-      agent_used: selectedAgent.name,
-      agent_id: selectedAgent.id,
-      sources: relevantMemories.slice(0, 5),
-      mentioned_agents: parsedMessage.mentionedAgents,
-      search_strategy: selectedAgent.search_config,
+      agent_used: "Memory Assistant",
+      sources: relevantMemories.slice(0, 5), // Return top 5 sources
       memory_count: relevantMemories.length,
+      search_performed: true,
     };
   }
 
-  // Parse @mentions and clean the query
-  parseMessage(message: string) {
-    const mentionRegex = /@([a-zA-Z0-9\-_]+)/g;
-    const mentions = [...message.matchAll(mentionRegex)].map(
-      (match: RegExpMatchArray) => match[1]
-    );
-    const cleanQuery = message.replace(mentionRegex, "").trim();
-
-    return {
-      originalMessage: message,
-      cleanQuery,
-      mentionedAgents: mentions,
-      hasMentions: mentions.length > 0,
-    };
-  }
-
-  // Get user's custom agents + default agents
-  async getUserAgents(userId: string): Promise<UserAgent[]> {
-    try {
-      console.log("🔍 getUserAgents: Fetching custom agents...");
-
-      // Fetch custom agents from database (all active agents for now)
-      const { data: customAgents, error } = await supabase
-        .from("user_agents")
-        .select("*")
-        .eq("active", true)
-        .order("created_at", { ascending: false });
-
-      console.log("🔍 Raw database response:", { data: customAgents, error });
-
-      if (error) {
-        console.error("❌ Error fetching custom agents:", error);
-        return this.getDefaultAgents();
-      }
-
-      // Transform custom agents to match UserAgent interface
-      const transformedCustomAgents: UserAgent[] = (customAgents || []).map(
-        (agent) => {
-          console.log("🔄 Transforming agent:", agent.name);
-          return {
-            id: agent.id,
-            name: agent.name,
-            description: agent.description,
-            expertise: agent.expertise || [],
-            system_prompt: agent.system_prompt,
-            model: agent.model,
-            avatar: agent.image_url,
-            created_by: agent.created_by || "custom",
-            search_config: {
-              threshold: agent.search_threshold || 0.4,
-              categories: agent.search_categories || [],
-              time_preference: agent.time_preference || "recent",
-            },
-          };
-        }
-      );
-
-      // Combine with default agents
-      const allAgents = [
-        ...this.getDefaultAgents(),
-        ...transformedCustomAgents,
-      ];
-
-      console.log(
-        `✅ getUserAgents result: ${transformedCustomAgents.length} custom + ${
-          this.getDefaultAgents().length
-        } default = ${allAgents.length} total`
-      );
-      console.log(
-        "📋 Custom agents loaded:",
-        transformedCustomAgents.map((a) => ({ name: a.name, id: a.id }))
-      );
-
-      return allAgents;
-    } catch (error) {
-      console.error("❌ Exception in getUserAgents:", error);
-      return this.getDefaultAgents();
-    }
-  }
-
-  // Default agents if user hasn't created any
-  getDefaultAgents(): UserAgent[] {
-    return [
-      {
-        id: "meeting-assistant",
-        name: "Meeting Assistant",
-        description: "Helps with meeting notes, action items, and follow-ups",
-        expertise: [
-          "meeting",
-          "call",
-          "discussion",
-          "action",
-          "follow-up",
-          "agenda",
-        ],
-        system_prompt: `You are a meeting specialist. Focus on extracting action items, next steps, and key decisions from meetings. Always provide actionable insights.`,
-        model: "llama3-8b-8192",
-        created_by: "system",
-        search_config: {
-          threshold: 0.3,
-          categories: ["Meeting", "Work"],
-          time_preference: "recent",
-        },
-      },
-      {
-        id: "research-analyst",
-        name: "Research Analyst",
-        description: "Analyzes research, data, and provides insights",
-        expertise: [
-          "research",
-          "analysis",
-          "data",
-          "study",
-          "insight",
-          "trend",
-        ],
-        system_prompt: `You are a research analyst. Synthesize information from multiple sources, identify patterns, and provide data-driven insights.`,
-        model: "llama3-70b-8192",
-        created_by: "system",
-        search_config: {
-          threshold: 0.4,
-          categories: ["Research", "Analysis"],
-          time_preference: "all",
-        },
-      },
-      {
-        id: "creative-assistant",
-        name: "Creative Assistant",
-        description: "Helps with ideas, brainstorming, and creative projects",
-        expertise: [
-          "idea",
-          "creative",
-          "brainstorm",
-          "concept",
-          "design",
-          "innovation",
-        ],
-        system_prompt: `You are a creative catalyst. Help connect ideas, suggest improvements, and provide creative inspiration based on stored concepts.`,
-        model: "llama3-8b-8192",
-        created_by: "system",
-        search_config: {
-          threshold: 0.25,
-          categories: ["Idea", "Creative", "Project"],
-          time_preference: "all",
-        },
-      },
-    ];
-  }
-
-  // Route to best agent based on mentions or content analysis
-  async routeToAgent(
-    parsedMessage: any,
-    agents: UserAgent[],
-    chatHistory: ChatMessage[]
-  ): Promise<UserAgent> {
-    // DEBUG: Log everything for troubleshooting
-    console.log("🔍 DEBUG routeToAgent:");
-    console.log("- Mentioned agents:", parsedMessage.mentionedAgents);
-    console.log(
-      "- Available agents:",
-      agents.map((a) => ({
-        name: a.name,
-        id: a.id,
-        mentionFormat: a.name.toLowerCase().replace(/\s+/g, "-"),
-      }))
-    );
-
-    // If user @mentioned an agent, use that one
-    if (parsedMessage.hasMentions) {
-      for (const mention of parsedMessage.mentionedAgents) {
-        console.log(`🎯 Looking for mention: "${mention}"`);
-
-        const mentionedAgent = agents.find((agent) => {
-          // Check exact name match (converted to mention format)
-          const agentMentionFormat = agent.name
-            .toLowerCase()
-            .replace(/\s+/g, "-");
-          console.log(
-            `   Comparing "${mention}" with "${agentMentionFormat}" (from "${agent.name}")`
-          );
-
-          if (agentMentionFormat === mention.toLowerCase()) {
-            console.log(`   ✅ EXACT MATCH found!`);
-            return true;
-          }
-
-          // Check if agent name contains the mention
-          if (agent.name.toLowerCase().includes(mention.toLowerCase())) {
-            console.log(`   ✅ PARTIAL MATCH found!`);
-            return true;
-          }
-
-          // Check agent ID
-          if (agent.id.toLowerCase() === mention.toLowerCase()) {
-            console.log(`   ✅ ID MATCH found!`);
-            return true;
-          }
-
-          console.log(`   ❌ No match`);
-          return false;
-        });
-
-        if (mentionedAgent) {
-          console.log(
-            `🎯 SUCCESS: Using mentioned agent: ${mentionedAgent.name}`
-          );
-          return mentionedAgent;
-        }
-      }
-
-      console.log(
-        `⚠️ NO MATCH: Mentioned agent(s) not found: ${parsedMessage.mentionedAgents.join(
-          ", "
-        )}`
-      );
-      console.log(`⚠️ Falling back to intelligent routing...`);
-    }
-
-    // Otherwise, use intelligent routing
-    return this.intelligentRouting(
-      parsedMessage.cleanQuery,
-      agents,
-      chatHistory
-    );
-  }
-
-  // AI-powered agent routing
-  async intelligentRouting(
+  private async searchMemories(
     query: string,
-    agents: UserAgent[],
-    chatHistory: ChatMessage[]
-  ): Promise<UserAgent> {
-    // Simple keyword-based routing (you could enhance this with AI)
-    const queryLower = query.toLowerCase();
+    embedding: number[]
+  ): Promise<Memory[]> {
+    try {
+      // First try semantic search with embeddings
+      let memories: Memory[] = [];
 
-    const agentScores = agents.map((agent) => {
-      const score = agent.expertise.reduce((total, keyword) => {
-        return total + (queryLower.includes(keyword) ? 1 : 0);
-      }, 0);
+      if (embedding && embedding.length > 0) {
+        const { data: semanticResults, error: semanticError } =
+          await supabase.rpc("match_memories_enhanced", {
+            query_embedding: embedding,
+            match_threshold: 0.3,
+            match_count: 15,
+            filter_category: null,
+            filter_memory_type: null,
+            date_from: null,
+            date_to: null,
+          });
 
-      // Boost score if recently used agent for context continuity
-      const lastAgentUsed = chatHistory[chatHistory.length - 1]?.agent_used;
-      if (lastAgentUsed === agent.name) {
-        return { agent, score: score + 0.5 };
+        if (!semanticError && semanticResults) {
+          memories = semanticResults;
+          console.log(`📊 Semantic search found ${memories.length} memories`);
+        }
       }
 
-      return { agent, score };
-    });
+      // If semantic search didn't find much, try keyword search
+      if (memories.length < 3) {
+        const keywordResults = await this.performKeywordSearch(query);
+        memories = [...memories, ...keywordResults];
+        console.log(`🔤 Added ${keywordResults.length} from keyword search`);
+      }
 
-    // Return best agent or default to first one
-    const bestMatch = agentScores.sort((a, b) => b.score - a.score)[0];
-    return bestMatch.score > 0 ? bestMatch.agent : agents[0];
-  }
+      // Remove duplicates and limit results
+      const uniqueMemories = memories.filter(
+        (memory, index, self) =>
+          index === self.findIndex((m) => m.id === memory.id)
+      );
 
-  // Search using agent's configuration
-  async searchWithAgent(query: string, embedding: number[], agent: UserAgent) {
-    const config = agent.search_config;
-
-    // Apply time filtering based on agent's preference
-    let dateFilter = null;
-    if (config.time_preference === "recent") {
-      const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - 30);
-      dateFilter = recentDate.toISOString();
-    }
-
-    try {
-      const { data, error } = await supabase.rpc("match_memories_enhanced", {
-        query_embedding: embedding,
-        match_threshold: config.threshold,
-        match_count: 10,
-        filter_category:
-          config.categories.length > 0 ? config.categories[0] : null,
-        filter_memory_type: null,
-        date_from: dateFilter,
-        date_to: null,
-      });
-
-      return data || [];
+      return uniqueMemories.slice(0, 10);
     } catch (error) {
-      console.error("Agent search error:", error);
+      console.error("❌ Memory search error:", error);
       return [];
     }
   }
 
-  // Generate response with agent personality
-  async generateResponse(
+  private async performKeywordSearch(query: string): Promise<Memory[]> {
+    try {
+      const queryLower = query.toLowerCase();
+
+      const { data, error } = await supabase
+        .from("memories")
+        .select("*")
+        .or(
+          `title.ilike.%${queryLower}%,content.ilike.%${queryLower}%,summary.ilike.%${queryLower}%`
+        )
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error("❌ Keyword search error:", error);
+      return [];
+    }
+  }
+
+  private async generateResponse(
     query: string,
-    memories: any[],
-    agent: UserAgent,
+    memories: Memory[],
     chatHistory: ChatMessage[]
   ) {
-    // Build context from memories
-    const memoryContext = memories
-      .map(
-        (memory) =>
-          `**${memory.title}** (${new Date(
-            memory.created_at
-          ).toLocaleDateString()})\n${memory.content.substring(0, 200)}...`
-      )
-      .join("\n\n");
+    // Build memory context with rich information
+    const memoryContext = this.buildMemoryContext(memories);
 
     // Build chat context
     const chatContext = chatHistory
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join("\n");
 
-    const completion = await groq.chat.completions.create({
-      model: agent.model,
-      messages: [
-        {
-          role: "system",
-          content: `${agent.system_prompt}
+    // Create context-aware prompt
+    const contextPrompt = this.buildContextPrompt(
+      query,
+      memoryContext,
+      chatContext
+    );
 
-Your name is ${agent.name}. ${agent.description}
+    try {
+      const completion = await groq.chat.completions.create({
+        model: "llama3-70b-8192", // Use the more capable model
+        messages: [
+          { role: "system", content: this.systemPrompt },
+          { role: "user", content: contextPrompt },
+        ],
+        max_tokens: 800,
+        temperature: 0.4, // Lower temperature for more focused responses
+      });
 
-Recent conversation context:
-${chatContext}
+      return {
+        content:
+          completion.choices[0]?.message?.content ||
+          "I couldn't generate a response. Please try again.",
+      };
+    } catch (error) {
+      console.error("❌ Response generation error:", error);
+      return {
+        content:
+          "I'm having trouble generating a response right now. Please try again.",
+      };
+    }
+  }
 
-User's memories:
-${memoryContext}
+  private buildMemoryContext(memories: Memory[]): string {
+    if (memories.length === 0) {
+      return "No relevant memories found.";
+    }
 
-Instructions:
-- Stay in character as ${agent.name}
-- Reference specific memories when relevant
-- Provide actionable insights based on your expertise
-- If asked for summaries or next steps, be comprehensive and organized`,
-        },
-        { role: "user", content: query },
-      ],
-      max_tokens: 700,
-      temperature: 0.5,
-    });
+    return memories
+      .map((memory, index) => {
+        let context = `**Memory ${index + 1}: ${memory.title}**\n`;
+        context += `Category: ${memory.category} | Type: ${memory.memory_type}\n`;
+        context += `Created: ${new Date(
+          memory.created_at
+        ).toLocaleDateString()}\n`;
 
-    return {
-      content: completion.choices[0]?.message?.content || "",
-      agent_personality: agent.name,
-    };
+        if (memory.summary) {
+          context += `Summary: ${memory.summary}\n`;
+        }
+
+        context += `Content: ${memory.content.substring(0, 300)}${
+          memory.content.length > 300 ? "..." : ""
+        }\n`;
+
+        if (memory.tags && memory.tags.length > 0) {
+          context += `Tags: ${memory.tags.join(", ")}\n`;
+        }
+
+        if (memory.action_items && memory.action_items.length > 0) {
+          context += `Action Items: ${memory.action_items.join("; ")}\n`;
+        }
+
+        if (memory.next_steps && memory.next_steps.length > 0) {
+          context += `Next Steps: ${memory.next_steps.join("; ")}\n`;
+        }
+
+        if (memory.priority) {
+          context += `Priority: ${memory.priority}\n`;
+        }
+
+        return context;
+      })
+      .join("\n---\n");
+  }
+
+  private buildContextPrompt(
+    query: string,
+    memoryContext: string,
+    chatContext: string
+  ): string {
+    let prompt = `User Query: "${query}"\n\n`;
+
+    if (chatContext) {
+      prompt += `Recent Conversation:\n${chatContext}\n\n`;
+    }
+
+    prompt += `Relevant Memories:\n${memoryContext}\n\n`;
+
+    prompt += `Instructions:
+- Answer the user's query using the provided memories as your knowledge base
+- Reference specific memories by their titles when citing information
+- If asked to summarize, organize the information clearly with sections/headings
+- Include relevant dates, categories, and details from the memories
+- If action items or next steps are relevant, highlight them clearly
+- If no relevant memories are found, say so and ask the user to be more specific`;
+
+    return prompt;
+  }
+
+  // Utility method to analyze query intent
+  private analyzeQueryIntent(query: string): string {
+    const queryLower = query.toLowerCase();
+
+    if (queryLower.includes("summarize") || queryLower.includes("summary")) {
+      return "summarize";
+    }
+    if (
+      queryLower.includes("action") ||
+      queryLower.includes("todo") ||
+      queryLower.includes("task")
+    ) {
+      return "action_items";
+    }
+    if (queryLower.includes("meeting") || queryLower.includes("call")) {
+      return "meetings";
+    }
+    if (queryLower.includes("recent") || queryLower.includes("latest")) {
+      return "recent";
+    }
+
+    return "general";
   }
 }

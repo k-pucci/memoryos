@@ -1,60 +1,55 @@
 // src/app/new-memory/page.tsx
-
 "use client";
 
-import React, { useState } from "react";
-import Layout from "@/components/layout";
-import { Plus, ArrowRight, Loader2, X, Brain } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import React, { useState, useRef, useEffect } from "react";
+import { ArrowRight, Loader2, X, Plus, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useEmbeddings } from "@/hooks/useEmbeddings";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  SelectionGroup,
-  SelectionOption,
-} from "@/components/ui/selection-group";
-import { getMemoryTypeIcon, MEMORY_CATEGORIES } from "@/lib/memory-utils";
+import { SelectionGroup } from "@/components/ui/selection-group";
+import { Select } from "@/components/ui/select";
+import { MEMORY_CATEGORIES } from "@/lib/memory-utils";
+import { PageLayout } from "@/components/layout/PageLayout";
 
-// Create category options for SelectionGroup
-const getCategoryOptions = (): SelectionOption[] => {
-  const iconMap: { [key: string]: React.ReactNode } = {
-    research: <Brain size={16} />,
-    product: <Plus size={16} />,
-    meeting: getMemoryTypeIcon("meeting"),
-    learning: getMemoryTypeIcon("learning"),
-    idea: getMemoryTypeIcon("idea"),
-    task: getMemoryTypeIcon("task"),
-  };
+// Quick tags for easy selection
+const QUICK_TAGS = ["important", "reference", "idea", "follow-up"];
 
-  return MEMORY_CATEGORIES.slice(1).map((category) => ({
-    value: category,
-    label: category,
-    icon: iconMap[category.toLowerCase()] || <Brain size={16} />,
-  }));
-};
+// AI Status Indicator Component
+function AIStatusIndicator({
+  isReady,
+  isLoading,
+}: {
+  isReady: boolean;
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 size={14} className="animate-spin" />
+        <span>Loading AI...</span>
+      </div>
+    );
+  }
 
-// Create memory type options
-const getMemoryTypeOptions = (): SelectionOption[] => {
-  const memoryTypes = [
-    "note",
-    "link",
-    "document",
-    "analysis",
-    "concept",
-    "event",
-  ];
+  if (isReady) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-green-600">
+        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+        <span>AI Ready</span>
+      </div>
+    );
+  }
 
-  return memoryTypes.map((type) => ({
-    value: type,
-    label: type,
-    icon: getMemoryTypeIcon(type),
-  }));
-};
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
+      <span>AI Initializing</span>
+    </div>
+  );
+}
 
 export default function NewMemoryPage() {
   const router = useRouter();
@@ -65,23 +60,18 @@ export default function NewMemoryPage() {
     isReady,
   } = useEmbeddings();
 
-  // Form state
+  // Form state with smart defaults
   const [formData, setFormData] = useState({
     title: "",
     category: "Research",
     memory_type: "note",
     content: "",
-    tags: "",
-    has_reminder: false,
   });
 
   // Tags management
-  const [tagsList, setTagsList] = useState<string[]>([
-    "important",
-    "reference",
-    "follow-up",
-    "idea",
-  ]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const scrollAreaViewportRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -90,66 +80,80 @@ export default function NewMemoryPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleReminderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, has_reminder: e.target.checked }));
-  };
+  const handleToggleTag = (tag: string) => {
+    setSelectedTags((prev) => {
+      const isRemoving = prev.includes(tag);
+      const newTags = isRemoving
+        ? prev.filter((t) => t !== tag)
+        : [...prev, tag];
 
-  const handleCategoryChange = (category: string) => {
-    setFormData((prev) => ({ ...prev, category }));
-  };
+      // Auto-scroll to bottom when adding a tag (but not when removing)
+      if (!isRemoving) {
+        setTimeout(() => {
+          if (scrollAreaViewportRef.current) {
+            scrollAreaViewportRef.current.scrollTop =
+              scrollAreaViewportRef.current.scrollHeight;
+          }
+        }, 50);
+      }
 
-  const handleTypeChange = (type: string) => {
-    setFormData((prev) => ({ ...prev, memory_type: type }));
+      return newTags;
+    });
   };
 
   const handleAddTag = () => {
-    if (!formData.tags.trim()) return;
-
-    const newTags = formData.tags
+    const tags = tagInput
       .split(",")
       .map((tag) => tag.trim())
-      .filter((tag) => tag && !tagsList.includes(tag));
+      .filter((tag) => tag && !selectedTags.includes(tag));
 
-    if (newTags.length > 0) {
-      setTagsList((prev) => [...prev, ...newTags]);
-      setFormData((prev) => ({ ...prev, tags: "" }));
+    if (tags.length > 0) {
+      setSelectedTags((prev) => {
+        const newTags = [...prev, ...tags];
+
+        // Auto-scroll to bottom when adding tags
+        setTimeout(() => {
+          if (scrollAreaViewportRef.current) {
+            scrollAreaViewportRef.current.scrollTop =
+              scrollAreaViewportRef.current.scrollHeight;
+          }
+        }, 50);
+
+        return newTags;
+      });
+      setTagInput("");
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTagsList((prev) => prev.filter((tag) => tag !== tagToRemove));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       handleAddTag();
     }
   };
 
   const handleCreateMemory = async () => {
-    if (!formData.title.trim() || !formData.content) {
-      toast.error("Please fill in required fields");
+    if (!formData.title.trim() || !formData.content.trim()) {
+      toast.error("Please add a title and some content");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      toast.loading("Generating AI embedding...", { id: "embedding" });
+      toast.loading("Creating memory...", { id: "creating" });
+
       const embeddingText = `${formData.title} ${
         formData.content
-      } ${tagsList.join(" ")}`;
+      } ${selectedTags.join(" ")}`;
       const embedding = await generateEmbedding(embeddingText);
-      toast.dismiss("embedding");
 
       const payload = {
         ...formData,
-        tags: tagsList,
+        tags: selectedTags,
         embedding,
       };
 
-      toast.loading("Creating memory...", { id: "creating" });
       const response = await fetch("/api/memories/create", {
         method: "POST",
         headers: {
@@ -165,245 +169,220 @@ export default function NewMemoryPage() {
         throw new Error(result.error || "Failed to create memory");
       }
 
-      toast.success("Memory created successfully!");
+      toast.success("Memory created!");
       router.push("/library");
     } catch (error: any) {
       console.error("Error creating memory:", error);
-      toast.dismiss("embedding");
       toast.dismiss("creating");
 
-      if (error.message.includes("embedding")) {
-        toast.error(
-          "Failed to generate AI embedding. Memory saved without semantic search."
-        );
-        try {
-          const payload = { ...formData, tags: tagsList };
-          const response = await fetch("/api/memories/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+      // Fallback without embedding
+      try {
+        const payload = { ...formData, tags: selectedTags };
+        const response = await fetch("/api/memories/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-          if (response.ok) {
-            toast.success("Memory created (without AI features)");
-            router.push("/library");
-          } else {
-            throw new Error("Failed to create memory");
-          }
-        } catch (fallbackError) {
-          toast.error("Failed to create memory");
+        if (response.ok) {
+          toast.success("Memory created (AI features limited)");
+          router.push("/library");
+        } else {
+          throw new Error("Failed to create memory");
         }
-      } else {
-        toast.error(error.message || "Something went wrong");
+      } catch (fallbackError) {
+        toast.error("Failed to create memory");
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isFormValid = formData.title.trim() && formData.content.trim();
+
   return (
-    <Layout currentPage="">
-      <div className="flex flex-col h-full max-h-screen overflow-hidden">
-        {/* Fixed Header Section */}
-        <div className="flex-shrink-0 space-y-6 p-6 pb-0">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <PageLayout
+      currentPage="New Memory"
+      title="New Memory"
+      description="Capture your thoughts and knowledge"
+      actions={
+        <div className="flex items-center gap-3">
+          <AIStatusIndicator isReady={isReady} isLoading={isEmbeddingLoading} />
+          <Button variant="outline" onClick={() => router.push("/library")}>
+            Cancel
+          </Button>
+        </div>
+      }
+    >
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Content (2/3 width) */}
+          <div className="lg:col-span-2 space-y-4">
+            <Input
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="Give your memory a title..."
+              className="text-lg font-medium h-12 border focus:border-primary"
+            />
+
+            <Textarea
+              name="content"
+              value={formData.content}
+              onChange={handleInputChange}
+              placeholder="Start writing your memory..."
+              className="min-h-[500px] text-base resize-none border focus:border-primary"
+            />
+          </div>
+
+          {/* Right Column - Metadata (1/3 width) */}
+          <div className="space-y-6">
+            {/* Tags Section */}
             <div>
-              <h1 className="text-3xl font-bold brand-terracotta">
-                Create New Memory
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Capture and store your knowledge with AI-powered search
-                {!isReady && (
-                  <span className="brand-coral ml-2">
-                    (AI features loading...)
-                  </span>
+              <div className="flex items-center gap-2 mb-3">
+                <Hash size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
+                  Tags
+                </span>
+              </div>
+
+              {/* Quick Tags */}
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_TAGS.map((tag) => {
+                    const isSelected = selectedTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleToggleTag(tag)}
+                        className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background border-border hover:border-primary/50 text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Tags Input */}
+                <div className="flex gap-2">
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    placeholder="Add tags..."
+                    className="flex-1 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddTag}
+                    disabled={!tagInput.trim()}
+                  >
+                    <Plus size={14} />
+                  </Button>
+                </div>
+
+                {/* Selected Tags Display */}
+                {selectedTags.length > 0 && (
+                  <div
+                    ref={scrollAreaViewportRef}
+                    className="max-h-16 overflow-y-auto"
+                  >
+                    <div className="flex flex-wrap gap-2 pr-2">
+                      {selectedTags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-muted text-muted-foreground text-sm rounded flex items-center gap-1"
+                        >
+                          {tag}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleToggleTag(tag)}
+                            className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive"
+                          >
+                            <X size={10} />
+                          </Button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </p>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <div className="flex items-center gap-2 text-sm px-4 py-2 bg-muted border border-border rounded-lg">
-                {isEmbeddingLoading ? (
+
+            {/* Category & Type */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Category
+                </label>
+                <Select
+                  name="category"
+                  value={formData.category}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, category: value }))
+                  }
+                  options={MEMORY_CATEGORIES.slice(1).map((cat) => ({
+                    value: cat,
+                    label: cat,
+                  }))}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Type
+                </label>
+                <Select
+                  name="memory_type"
+                  value={formData.memory_type}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, memory_type: value }))
+                  }
+                  options={[
+                    { value: "note", label: "Note" },
+                    { value: "link", label: "Link" },
+                    { value: "document", label: "Document" },
+                    { value: "analysis", label: "Analysis" },
+                    { value: "concept", label: "Concept" },
+                    { value: "event", label: "Event" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Create Button */}
+            <div className="pt-4">
+              <Button
+                onClick={handleCreateMemory}
+                disabled={!isFormValid || isSubmitting}
+                className="w-full"
+                size="lg"
+              >
+                {isSubmitting ? (
                   <>
-                    <Loader2 size={16} className="animate-spin brand-coral" />
-                    <span className="brand-coral">Loading AI...</span>
-                  </>
-                ) : isReady ? (
-                  <>
-                    <div className="w-2 h-2 bg-brand-sage rounded-full"></div>
-                    <span className="brand-sage">AI Ready</span>
+                    <Loader2 size={16} className="animate-spin mr-2" />
+                    Saving...
                   </>
                 ) : (
                   <>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
-                    <span className="text-muted-foreground">
-                      AI Initializing
-                    </span>
+                    Create Memory
+                    <ArrowRight size={16} className="ml-2" />
                   </>
                 )}
-              </div>
-              <Button variant="outline" onClick={() => router.push("/library")}>
-                Cancel
               </Button>
             </div>
           </div>
         </div>
-
-        {/* Scrollable Content Area */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <div className="p-6 pt-4 h-full">
-            <ScrollArea className="h-full">
-              <div className="space-y-6 pr-4">
-                <Card className="bg-card border-border card-shadow">
-                  <CardContent className="p-6">
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Memory Title
-                        </label>
-                        <Input
-                          name="title"
-                          value={formData.title}
-                          onChange={handleInputChange}
-                          placeholder="Enter a descriptive title..."
-                          className="bg-background border-border text-foreground placeholder:text-muted-foreground"
-                        />
-                      </div>
-
-                      {/* Category Selection using SelectionGroup */}
-                      <SelectionGroup
-                        options={getCategoryOptions()}
-                        value={formData.category}
-                        onChange={handleCategoryChange}
-                        label="Category"
-                        variant="buttons"
-                        size="sm"
-                      />
-
-                      {/* Memory Type Selection using SelectionGroup */}
-                      <SelectionGroup
-                        options={getMemoryTypeOptions()}
-                        value={formData.memory_type}
-                        onChange={handleTypeChange}
-                        label="Memory Type"
-                        variant="grid"
-                        columns={3}
-                      />
-
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Content
-                        </label>
-                        <Textarea
-                          name="content"
-                          value={formData.content}
-                          onChange={handleInputChange}
-                          placeholder="Write your memory content..."
-                          className="h-40 resize-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">
-                          Tags
-                        </label>
-                        <div className="flex gap-2">
-                          <Input
-                            name="tags"
-                            value={formData.tags}
-                            onChange={handleInputChange}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Add tags separated by commas..."
-                            className="bg-background border-border text-foreground placeholder:text-muted-foreground"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleAddTag}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {tagsList.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="px-3 py-1 bg-primary/10 text-primary text-sm rounded-full flex items-center gap-1 border border-primary/20"
-                            >
-                              {tag}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveTag(tag)}
-                                className="text-primary/70 hover:text-primary h-4 w-4 p-0"
-                              >
-                                <X size={14} />
-                              </Button>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="pt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-t border-border">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="reminder"
-                            checked={formData.has_reminder}
-                            onChange={handleReminderChange}
-                            className={cn(
-                              "w-4 h-4 rounded text-primary",
-                              "bg-background border-border",
-                              "focus:ring-primary/20 focus:ring-2"
-                            )}
-                          />
-                          <label
-                            htmlFor="reminder"
-                            className="ml-2 text-sm text-foreground"
-                          >
-                            Set reminder
-                          </label>
-                        </div>
-                        <div className="flex gap-3 w-full sm:w-auto">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="flex-1 sm:flex-none"
-                            onClick={() => router.push("/library")}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="button"
-                            onClick={handleCreateMemory}
-                            disabled={isSubmitting}
-                            className="flex-1 sm:flex-none"
-                          >
-                            {isSubmitting ? (
-                              <>
-                                <Loader2
-                                  size={16}
-                                  className="animate-spin mr-2"
-                                />
-                                Creating...
-                              </>
-                            ) : (
-                              <>
-                                Create Memory
-                                <ArrowRight size={16} className="ml-2" />
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
       </div>
-    </Layout>
+    </PageLayout>
   );
 }

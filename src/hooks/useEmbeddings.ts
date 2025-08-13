@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 
 export function useEmbeddings() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isReady, setIsReady] = useState(true); // API is always "ready"
+  const [isReady, setIsReady] = useState(true);
 
   const generateEmbedding = useCallback(
     async (text: string): Promise<number[]> => {
@@ -22,7 +22,7 @@ export function useEmbeddings() {
         return data.embedding;
       } catch (error) {
         console.error("Embedding generation error:", error);
-        // Fallback: return a simple keyword-based vector
+
         return generateKeywordVector(text);
       } finally {
         setIsLoading(false);
@@ -36,7 +36,6 @@ export function useEmbeddings() {
       try {
         const queryEmbedding = await generateEmbedding(query);
 
-        // If we have a valid embedding, use semantic search via API
         const response = await fetch("/api/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -51,7 +50,6 @@ export function useEmbeddings() {
         return data.results || [];
       } catch (error) {
         console.error("Search error:", error);
-        // Fallback: simple text search
         return memories
           .filter(
             (memory) =>
@@ -65,8 +63,6 @@ export function useEmbeddings() {
   );
 
   const initializeEmbedder = useCallback(async () => {
-    // This is now a no-op since initialization happens server-side
-    // But we keep it for compatibility with existing code
     setIsReady(true);
     return true;
   }, []);
@@ -80,7 +76,6 @@ export function useEmbeddings() {
   };
 }
 
-// Fallback: Simple keyword-based vector
 function generateKeywordVector(text: string): number[] {
   const keywords = text
     .toLowerCase()
@@ -103,7 +98,7 @@ function hashString(str: string): number {
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
+    hash = hash & hash;
   }
   return Math.abs(hash);
 }

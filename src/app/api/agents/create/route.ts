@@ -68,13 +68,9 @@ export async function POST(request: NextRequest) {
     let imageUrl = null;
     if (image && image.size > 0) {
       try {
-        // Convert image to base64 or upload to storage
-        // For now, we'll create a simple placeholder
-        // You can implement actual image upload later
         console.log("Image received:", image.name, image.size, image.type);
 
         // TODO: Implement image upload to Supabase Storage or other service
-        // Example for Supabase Storage:
         /*
         const fileExt = image.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -114,13 +110,12 @@ export async function POST(request: NextRequest) {
       active: true,
     };
 
-    // Add image_url only if we have one
+    // Add image_url only if there is one
     if (imageUrl) {
       agentData.image_url = imageUrl;
     }
 
-    // TODO: Add created_by when you implement authentication
-    // For now, skip created_by to avoid foreign key constraint issues
+    // TODO: Add created_by when implementing authentication
 
     // Create the agent
     const { data, error } = await supabase

@@ -1,279 +1,336 @@
-# MemoryOS
+# Cognote
 
 ## Overview
 
-MemoryOS is a personal knowledge management application that helps users capture, organize, and retrieve their thoughts, notes, and insights with ease. Built with a focus on user experience and visual appeal, it features a dark, gradient-rich interface reminiscent of cutting-edge productivity tools.
+Cognote is a modern personal knowledge management system that combines AI-powered search with intuitive memory organization. Built with Next.js 15 and featuring a clean, professional interface, it helps users capture, organize, and retrieve their thoughts, notes, and insights with powerful semantic search capabilities.
 
-## 🚀 Live Demo
+## Live Demo
 
-**Try MemoryOS now:** [memoryos-live.vercel.app](https://memoryos-live.vercel.app)
+**Try Cognote now:** [memorys-live.vercel.app](https://memoryos-live.vercel.app)
 
-> ⚠️ **Demo Environment**: This is a public demo instance. Please do not enter any sensitive or personal information.
+> **Demo Environment**: This is a public demo instance. Please do not enter any sensitive or personal information.
 
-### Key Features
+## Key Features
 
-- **Smart Memory Cards**: Dynamic content display with rich text and list support
-- **AI-Powered Assistant**: Natural language queries to find and organize memories
-- **Structured Collections**: Six organized memory stacks (Research, Product, Meeting, Learning, Idea, Task)
-- **Calendar Integration**: Memory-linked events and intelligent meeting management
-- **Knowledge Library**: Categorized resource management (Articles, Books, Papers, Videos, Podcasts, Code)
-- **Smart Notifications**: Contextual alerts and meeting reminders
-- **Modern Dark UI**: Beautiful gradient-rich interface with smooth animations
-- **Responsive Design**: Seamless experience across desktop and mobile devices
-- **Real-time Updates**: Dynamic content updates and live memory synchronization
+### Smart Memory Management
 
-## Screenshots
+- **AI-Powered Search**: Semantic search using embeddings for intelligent content discovery
+- **Memory Creation**: Rich text editor with categorization and tagging
+- **Memory Detail Views**: Full-featured editing with 2-column layout consistency
+- **Dynamic Memory Cards**: Clean card-based interface with category color coding
 
-### Dashboard - Your Memory Hub
-![Dashboard](screenshots/home.png)
+### AI Integration
 
-### Memory Stack - Organized Collections
-![Memory Stack](screenshots/memorystack.png)
-*Six categorized memory collections (Research, Product, Meeting, Learning, Idea, Task) with color-coded organization*
+- **Unified Chat Interface**: Natural language conversations about your memories
+- **Groq AI Integration**: Fast, intelligent responses powered by advanced language models
+- **Semantic Search**: Vector-based search for finding related content
+- **AI Embeddings**: Automatic content analysis for better organization
 
-### AI Assistant - Intelligent Memory Companion
-![AI Assistant](screenshots/aichat.png)
-*Built-in MemoryOS Assistant for natural language queries about your stored memories and information*
+### Knowledge Organization
 
-### Calendar - Schedule & Memory Integration
-![Calendar](screenshots/calendar.png)
-*Interactive calendar view with memory-linked events, upcoming meetings, and smart scheduling*
+- **Memory Library**: Centralized hub for all your captured knowledge
+- **Advanced Filtering**: Search by category, type, tags, and date ranges
+- **Smart Categorization**: Research, Product, Meeting, Learning, Idea, Task, Note, Document
+- **Tag Management**: Flexible tagging system with quick tag suggestions
 
-### Library - Knowledge Repository
-![Library](screenshots/library.png)
-*Comprehensive library with categorized resources: Articles, Books, Research Papers, Videos, and more*
+### Modern Interface
+
+- **Clean Design System**: Consistent UI components with Tailwind CSS
+- **Light/Dark Theme**: Elegant theme switching with proper color schemes
+- **Responsive Layout**: Seamless experience across desktop and mobile
+- **Smooth Animations**: Polished interactions and transitions
 
 ## Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) with App Router
-- **Language**: [TypeScript](https://www.typescriptlang.org/) for type safety
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
-- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) for consistent, accessible components
-- **Icons**: [Lucide React](https://lucide.dev/) for beautiful, customizable icons
-- **State Management**: React hooks for local state management
+- **Frontend**: [Next.js 15](https://nextjs.org/) with App Router & TypeScript
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with custom design system
+- **Database**: [Supabase](https://supabase.com/) for PostgreSQL backend
+- **AI/Search**: [Groq](https://groq.com/) for language models + custom embeddings
+- **UI Components**: Custom component library with shadcn/ui patterns
+- **State Management**: React hooks with server-side integration
 
-## 🛠️ Installation & Setup
+## Project Structure
+
+```
+src/
+├── app/                        # Next.js App Router
+│   ├── page.tsx               # Dashboard homepage
+│   ├── memory/[id]/           # Individual memory view/edit
+│   ├── new-memory/            # Memory creation form
+│   ├── library/               # Memory library with search
+│   ├── chat/                  # AI chat interface
+│   ├── profile/               # User settings
+│   └── api/                   # Backend API routes
+│       ├── memories/          # Memory CRUD operations
+│       ├── search/            # Search endpoints
+│       ├── embeddings/        # AI embedding generation
+│       ├── chat/             # AI chat endpoints
+│       └── analytics/         # Usage analytics
+├── components/
+│   ├── ui/                    # Reusable UI components
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── search-bar.tsx
+│   │   └── selection-group.tsx
+│   ├── layout/                # Layout components
+│   │   ├── PageLayout.tsx     # Consistent page wrapper
+│   │   └── primitives.tsx     # Layout primitives
+│   ├── shared/                # App-wide components
+│   │   ├── MemoryCard.tsx
+│   │   ├── SearchFilters.tsx
+│   │   └── ViewControls.tsx
+│   └── memory/                # Memory-specific components
+├── lib/                       # Utilities and helpers
+│   ├── memory-utils.tsx       # Memory type definitions
+│   ├── search-utils.ts        # Search functionality
+│   ├── groq.ts               # AI integration
+│   └── agents/               # Chat agent logic
+└── hooks/                     # Custom React hooks
+    └── useEmbeddings.ts      # AI embedding hook
+```
+
+## Installation & Setup
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm, yarn, or pnpm
+- Supabase account (for database)
+- Groq API key (for AI features)
 
 ### Quick Start
 
 1. **Clone the repository**
+
    ```bash
-   git clone https://github.com/yourusername/memoryos.git
-   cd memoryos
+   git clone https://github.com/yourusername/cognote.git
+   cd cognote
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
-   # or
-   yarn install
-   # or
-   pnpm install
    ```
 
-3. **Set up shadcn/ui**
-   ```bash
-   npx shadcn-ui@latest init
-   npx shadcn-ui@latest add card input avatar scroll-area
+3. **Set up environment variables**
+   Create a `.env.local` file:
+
+   ```env
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+   # Groq AI Configuration
+   GROQ_API_KEY=your_groq_api_key
    ```
 
-4. **Run the development server**
+4. **Set up Supabase database**
+
+   - Create a new Supabase project
+   - Run the SQL schema (see Database Setup section)
+   - Enable Row Level Security if needed
+
+5. **Run the development server**
+
    ```bash
    npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
    ```
 
-5. **Open your browser**
+6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## ## Project Structure
+## Database Setup
 
+Cognote uses Supabase (PostgreSQL) with the following schema:
+
+```sql
+-- Main memories table
+CREATE TABLE memories (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  summary TEXT,
+  category TEXT NOT NULL,
+  memory_type TEXT NOT NULL,
+  tags TEXT[] DEFAULT '{}',
+  source_url TEXT,
+  embedding VECTOR(384), -- For AI search
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX idx_memories_category ON memories(category);
+CREATE INDEX idx_memories_type ON memories(memory_type);
+CREATE INDEX idx_memories_created_at ON memories(created_at);
+
+-- Vector similarity search index
+CREATE INDEX ON memories USING ivfflat (embedding vector_cosine_ops);
 ```
-memoryos-ui/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── page.tsx           # Dashboard with memory cards & meetings
-│   │   ├── memory-stack/      # Six categorized memory collections  
-│   │   ├── ai-agents/         # AI Assistant chat interface
-│   │   ├── library/           # Knowledge library with filtering
-│   │   ├── calendar/          # Interactive calendar with events
-│   │   ├── notifications/     # Alert and notification center
-│   │   ├── profile/           # User settings and preferences
-│   │   └── new-memory/        # Memory creation and editing
-│   ├── components/
-│   │   ├── layout.tsx         # Shared layout with sidebar navigation
-│   │   └── ui/                # shadcn/ui component library
-│   └── styles/               # Global styles and theme configuration
-├── public/                    # Static assets and screenshots
-├── tailwind.config.js         # Tailwind CSS configuration
-├── next.config.js            # Next.js build configuration
-└── package.json              # Dependencies and scripts
-```
 
-## Design Philosophy
-
-MemoryOS follows modern design principles with a focus on:
-
-- **Dark Theme**: Reduces eye strain during extended use
-- **Gradient Accents**: Purple-to-blue gradients for visual hierarchy
-- **Glassmorphism**: Subtle transparency effects for depth
-- **Smooth Animations**: Enhances user experience without being distracting
-- **Responsive Design**: Works seamlessly across desktop and mobile devices
+## Design System
 
 ### Color Palette
 
 ```css
-Primary: Purple (#8B5CF6) to Blue (#3B82F6)
-Background: Slate 950 (#020617) to Slate 900 (#0F172A)
-Cards: Slate 800/50 with transparency
-Text: White (#FFFFFF) and Gray variants
-Accents: Emerald, Amber, Pink, Indigo variants
+/* Light Theme */
+--primary: #d99873; /* Terracotta */
+--secondary: #a3b18a; /* Sage Green */
+--accent: #78c6d0; /* Teal */
+--muted: #f1f5f9; /* Light Gray */
+
+/* Dark Theme */
+--primary: #c49a7b; /* Muted Terracotta */
+--secondary: #7a8a6b; /* Muted Sage */
+--accent: #6bb6c1; /* Muted Teal */
+--background: #212121; /* Clean Dark Gray */
 ```
 
-## Key Components & Architecture
+### Memory Categories
 
-### Dashboard Layout
-- **Memory Cards Grid**: Responsive 2-column layout with gradient backgrounds
-- **Meeting Sidebar**: Real-time upcoming events with participant avatars
-- **AI Assistant Widget**: Contextual memory queries and suggestions
-- **Quick Actions**: Instant memory creation and search access
+Each memory type has distinct visual styling:
 
-### Memory Stack System
-Six distinct categories with unique color schemes:
-```
-Research    - Blue gradient
-Product     - Purple gradient  
-Meeting     - Orange gradient
-Learning    - Green gradient
-Idea        - Cyan gradient
-Task        - Purple gradient
-```
+- **Research** - Teal accent
+- **Product** - Terracotta accent
+- **Meeting** - Sage accent
+- **Learning** - Gold accent
+- **Idea** - Peru accent
+- **Task** - Slate accent
+- **Note** - Sea Green accent
+- **Document** - Forest Green accent
 
-### AI Assistant Features
-- **Natural Language Processing**: Ask questions about your memories
-- **Contextual Responses**: Intelligent memory retrieval and organization
-- **Chat Interface**: Clean, WhatsApp-style conversation UI
-- **Memory Linking**: Automatic connections between related content
+## API Routes
 
-### Library Organization
-Advanced filtering system with 7 content types:
-- **Articles** - Web content and blog posts
-- **Books** - Reading materials and references  
-- **Notes** - Personal annotations and thoughts
-- **Research Papers** - Academic and technical documents
-- **Videos** - Educational and reference videos
-- **Podcasts** - Audio content and discussions
-- **Code Snippets** - Development resources and examples
+### Memory Management
 
-## Features Deep Dive
+- `POST /api/memories/create` - Create new memory
+- `GET /api/memories/[id]` - Get memory by ID
+- `PUT /api/memories/[id]` - Update memory
+- `DELETE /api/memories/[id]` - Delete memory
+- `POST /api/memories/search` - Search memories
+- `GET /api/memories/tags` - Get all tags
 
-### Dynamic Dashboard
-- **Smart Memory Grid**: 2x3 responsive layout with gradient-themed cards
-- **Real-time Meeting Sidebar**: Upcoming events with participant management
-- **Memory Assistant Integration**: Quick access to AI-powered memory queries
-- **Live Content Updates**: Dynamic memory card content with edit capabilities
+### AI & Search
 
-### Memory Stack Organization  
-Six intelligent categories for structured knowledge management:
-- **Research** - Studies, analysis, and insights
-- **Product** - Development ideas and roadmaps  
-- **Meeting** - Notes, action items, and follow-ups
-- **Learning** - Educational content and skill development
-- **Idea** - Creative concepts and brainstorming
-- **Task** - To-dos, deadlines, and project management
+- `POST /api/embeddings` - Generate embeddings
+- `POST /api/search` - Semantic search
+- `POST /api/chat/unified` - AI chat responses
 
-### AI Assistant Capabilities
-- **Conversational Interface**: Natural language memory queries
-- **Contextual Understanding**: Smart retrieval based on content relationships
-- **Memory Suggestions**: Proactive recommendations for organization
-- **Quick Search**: Instant memory location and content preview
+### Analytics
 
-### Library Management System
-Advanced content organization with:
-- **Multi-format Support**: Articles, Books, Papers, Videos, Podcasts, Code
-- **Smart Categorization**: Automatic tagging and classification
-- **Favorites System**: Personal curation and quick access
-- **Source Attribution**: Author, platform, and date tracking
+- `GET /api/analytics/memories` - Memory statistics
 
-### Calendar & Event Integration
-- **Memory-linked Events**: Connect meetings to relevant memory content
-- **Visual Event Tracking**: Color-coded categories and time management
-- **Participant Management**: Avatar display and team coordination
-- **Smart Scheduling**: AI-suggested optimal meeting times
+## Key Components
 
-## Configuration
+### Memory Creation (`/new-memory`)
 
-### Environment Variables
+- **2-column layout**: Content on left, metadata on right
+- **Quick tags**: Pre-defined tags for rapid tagging
+- **Category/type selection**: Dropdown selectors
+- **AI embedding**: Automatic content analysis
 
-Create a `.env.local` file in your root directory:
+### Memory Library (`/library`)
+
+- **Advanced search**: Text search with filters
+- **View modes**: Grid and list layouts
+- **Smart filtering**: Category, type, tags, date range
+- **Recent searches**: Quick access to previous queries
+
+### AI Chat (`/chat`)
+
+- **Unified interface**: Chat with AI about your memories
+- **Context awareness**: AI understands your memory collection
+- **Natural language**: Ask questions in plain English
+
+### Memory Detail (`/memory/[id]`)
+
+- **View/edit modes**: Seamless switching between viewing and editing
+- **Consistent layout**: Matches new memory page design
+- **Related memories**: AI-powered content suggestions
+
+## Environment Configuration
 
 ```env
-# Database (if using external database)
-DATABASE_URL="your-database-url"
+# Required - Supabase Database
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
-# Authentication (if implementing auth)
-NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
+# Required - AI Features
+GROQ_API_KEY=your_groq_api_key
 
-# AI/Search Integration (future enhancement)
-GROQ_API_KEY="your-groq-key"
+# Optional - Development
+NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### Customization
-
-#### Themes
-Modify `tailwind.config.js` to customize colors:
-
-```javascript
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        // Your custom color palette
-      }
-    }
-  }
-}
-```
-
-#### Components
-All UI components are customizable through the `src/components/ui/` directory.
-
+## Development Workflow
 
 ### Code Style
 
-- Use TypeScript for all new code
-- Follow the existing code style and formatting
-- Add proper type definitions
-- Include JSDoc comments for complex functions
+- **TypeScript**: Strict type checking enabled
+- **ESLint**: Code quality and consistency
+- **Prettier**: Automatic code formatting
+- **Component patterns**: Consistent naming and structure
+
+### Component Architecture
+
+- **Separation of concerns**: UI, logic, and data layers
+- **Reusability**: Extract shared components appropriately
+- **SOLID principles**: Single responsibility, open/closed, etc.
+- **Clean abstractions**: Avoid over-engineering, focus on value
+
+### Adding New Features
+
+1. Create API route in `/api` if needed
+2. Build UI components in appropriate `/components` folder
+3. Add page in `/app` with proper layout
+4. Test functionality and update types
+5. Document any new environment variables
 
 ## Roadmap
 
-### Version 2.0
-- [ ] User authentication and multi-user support
-- [ ] Real-time collaboration features
-- [ ] Advanced AI integration for smart suggestions
+### Immediate (v1.1)
+
+- [ ] Advanced memory templates
+- [ ] Bulk operations (delete, categorize)
+- [ ] Memory sharing and collaboration
+- [ ] Enhanced AI chat with memory references
+
+### Short-term (v1.5)
+
+- [ ] Memory linking and relationships
+- [ ] File upload and attachment support
+- [ ] Advanced analytics dashboard
+- [ ] Import/export functionality
+
+### Long-term (v2.0)
+
+- [ ] Multi-user workspaces
+- [ ] Real-time collaboration
 - [ ] Mobile app (React Native)
-- [ ] Offline sync capabilities
-
-### Version 1.5
-- [ ] Export/import functionality
-- [ ] Advanced search filters
-- [ ] Memory templates
 - [ ] Integration with external tools (Notion, Obsidian)
-- [ ] Dark/light theme toggle
+- [ ] Advanced AI features (auto-categorization, summaries)
 
-### Version 1.1
-- [ ] Backend integration (database persistence)
-- [ ] User preferences storage
-- [ ] Advanced memory categorization
-- [ ] Bulk operations
+## Contributing
 
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Guidelines
+
+- Follow the existing code style
+- Add TypeScript types for new features
+- Update documentation for API changes
+- Test your changes thoroughly
+
+## Acknowledgments
+
+- [Next.js](https://nextjs.org/) for the excellent React framework
+- [Tailwind CSS](https://tailwindcss.com/) for utility-first styling
+- [Supabase](https://supabase.com/) for backend infrastructure
+- [Groq](https://groq.com/) for lightning-fast AI inference
+- [Lucide](https://lucide.dev/) for beautiful icons

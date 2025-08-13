@@ -52,8 +52,7 @@ export const MEMORY_CATEGORIES = [
   "Event",
 ];
 
-// Memory type to icon mapping - IDENTICAL in all 3 files
-export const getMemoryTypeIcon = (memoryType: string) => {
+export const getMemoryTypeIcon = (memoryType: string | undefined | null) => {
   const iconMap: { [key: string]: React.ReactNode } = {
     note: <Edit size={14} />,
     document: <FileText size={14} />,
@@ -69,13 +68,20 @@ export const getMemoryTypeIcon = (memoryType: string) => {
     task: <CheckSquare size={14} />,
   };
 
+  // Handle undefined, null, or empty memoryType
+  if (!memoryType || typeof memoryType !== "string") {
+    return <Archive size={14} />;
+  }
+
   return iconMap[memoryType.toLowerCase()] || <Archive size={14} />;
 };
 
-// Memory type CSS class - IDENTICAL in home and library
-export const getMemoryTypeClass = (memoryType: string, category: string) => {
-  const type = memoryType.toLowerCase();
-  const cat = category.toLowerCase();
+export const getMemoryTypeClass = (
+  memoryType: string | undefined | null,
+  category: string | undefined | null
+) => {
+  const type = memoryType?.toLowerCase() || "";
+  const cat = category?.toLowerCase() || "";
 
   const memoryTypes = [
     "research",
@@ -92,9 +98,9 @@ export const getMemoryTypeClass = (memoryType: string, category: string) => {
     "event",
   ];
 
-  if (memoryTypes.includes(type)) {
+  if (type && memoryTypes.includes(type)) {
     return `memory-${type}`;
-  } else if (memoryTypes.includes(cat)) {
+  } else if (cat && memoryTypes.includes(cat)) {
     return `memory-${cat}`;
   }
 

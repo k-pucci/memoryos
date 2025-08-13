@@ -1,4 +1,4 @@
-// components/layout.tsx - Updated to use SearchBar component
+// components/layout.tsx - Updated with blended collapsed sidebar
 "use client";
 
 import React, { useState } from "react";
@@ -28,6 +28,8 @@ import { performMemorySearch } from "@/lib/search-utils";
 interface LayoutProps {
   children: React.ReactNode;
   currentPage?: string;
+  scrollMode?: "page" | "container";
+  contentPadding?: boolean; // New prop to control content padding
 }
 
 interface NavButtonProps {
@@ -47,6 +49,8 @@ interface NavItem {
 export default function Layout({
   children,
   currentPage = "Home",
+  scrollMode = "page",
+  contentPadding = true, // Default to true for backward compatibility
 }: LayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const router = useRouter();
@@ -58,21 +62,9 @@ export default function Layout({
     { icon: <Home size={18} />, label: "Home", path: "/" },
     { icon: <BookOpen size={18} />, label: "Library", path: "/library" },
     { icon: <MessageSquare size={18} />, label: "Chat", path: "/chat" },
-    {
-      icon: <Settings size={18} />,
-      label: "Agents",
-      path: "/agents/view",
-    },
   ];
 
-  const bottomNavItems: NavItem[] = [
-    // Temporarily commented out notifications
-    // {
-    //   icon: <Bell size={18} />,
-    //   label: "Notifications",
-    //   path: "/notifications",
-    // },
-  ];
+  const bottomNavItems: NavItem[] = [];
 
   // Handle navigation
   const navigateTo = (path: string) => {
@@ -138,7 +130,7 @@ export default function Layout({
 
   // Handle view all results
   const handleViewAllResults = (query: string) => {
-    router.push(`/search?q=${encodeURIComponent(query)}`);
+    router.push(`/library?q=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -147,33 +139,37 @@ export default function Layout({
       <div
         className={`${
           sidebarCollapsed ? "w-20" : "w-64"
-        } transition-all duration-300 p-4 flex flex-col gap-4 relative border-r border-sidebar-border bg-sidebar`}
+        } transition-all duration-300 ease-in-out p-4 flex flex-col gap-4 relative border-r overflow-hidden ${
+          sidebarCollapsed
+            ? "bg-background border-border/50" // Blended background when collapsed
+            : "bg-sidebar border-sidebar-border" // Normal sidebar colors when expanded
+        }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div
+          className={`flex items-center mb-8 ${
+            sidebarCollapsed ? "justify-center" : "justify-between"
+          }`}
+        >
           {!sidebarCollapsed && (
             <div
-              className="flex items-center cursor-pointer"
+              className="flex items-center cursor-pointer overflow-hidden"
               onClick={() => navigateTo("/")}
             >
-              <span className="brand-terracotta text-2xl font-bold mr-1">
+              <span className="brand-terracotta text-2xl font-bold mr-1 transition-opacity duration-300 ease-in-out">
                 Cognote
               </span>
-            </div>
-          )}
-          {sidebarCollapsed && (
-            <div
-              className="mx-auto brand-terracotta text-2xl font-bold cursor-pointer"
-              onClick={() => navigateTo("/")}
-            >
-              C
             </div>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="text-sidebar-foreground/60 hover:text-sidebar-foreground"
+            className={`transition-colors duration-200 ${
+              sidebarCollapsed
+                ? "text-foreground/60 hover:text-foreground" // Main page text colors when collapsed
+                : "text-sidebar-foreground/60 hover:text-sidebar-foreground" // Sidebar colors when expanded
+            }`}
           >
             <Menu size={18} />
           </Button>
@@ -205,16 +201,30 @@ export default function Layout({
           <Button
             variant="ghost"
             onClick={toggleTheme}
-            className="justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            className={`justify-start transition-colors duration-200 overflow-hidden ${
+              sidebarCollapsed
+                ? "text-foreground/70 hover:text-foreground" // Main page text colors when collapsed
+                : "text-sidebar-foreground/70 hover:text-sidebar-foreground" // Sidebar colors when expanded
+            }`}
           >
-            <div className="text-sidebar-foreground/60">
+            <div
+              className={`flex-shrink-0 ${
+                sidebarCollapsed
+                  ? "text-foreground/60" // Main page text colors when collapsed
+                  : "text-sidebar-foreground/60" // Sidebar colors when expanded
+              }`}
+            >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </div>
-            {!sidebarCollapsed && (
-              <span className="ml-3 text-sm">
-                {theme === "dark" ? "Light Mode" : "Dark Mode"}
-              </span>
-            )}
+            <span
+              className={`ml-3 text-sm transition-all duration-300 ease-in-out ${
+                sidebarCollapsed
+                  ? "opacity-0 w-0 translate-x-2"
+                  : "opacity-100 w-auto translate-x-0"
+              }`}
+            >
+              {theme === "dark" ? "Light Mode" : "Dark Mode"}
+            </span>
           </Button>
 
           {bottomNavItems.map((item, index) => (
@@ -227,51 +237,117 @@ export default function Layout({
               onClick={() => navigateTo(item.path)}
             />
           ))}
-        </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 flex flex-col gap-6 overflow-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          {/* Search Bar */}
-          <SearchBar
-            placeholder="Search your memories..."
-            searchFunction={searchMemories}
-            renderResult={renderMemoryResult}
-            onResultClick={handleResultClick}
-            onViewAllResults={handleViewAllResults}
-            className="w-2/3"
-            size="lg"
-            variant="default"
+          {/* Separator Line */}
+          <div
+            className={`my-2 ${
+              sidebarCollapsed
+                ? "border-t border-border" // Main page border color when collapsed
+                : "border-t border-sidebar-border" // Sidebar border color when expanded
+            }`}
           />
 
-          {/* User Avatar */}
-          <div className="flex items-center gap-3">
-            <Button onClick={() => navigateTo("/new-memory")}>
-              <Plus size={18} />
-              <span className="hidden sm:inline ml-2">New Memory</span>
-              <span className="sm:hidden ml-2">New</span>
-            </Button>
-            <Avatar
-              className="border-2 border-primary/30 h-10 w-10 cursor-pointer"
-              onClick={() => navigateTo("/profile")}
-            >
-              <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+          {/* Profile Section */}
+          <Button
+            variant="ghost"
+            onClick={() => navigateTo("/profile")}
+            className={`justify-start p-3 transition-colors duration-200 overflow-hidden ${
+              sidebarCollapsed
+                ? "text-foreground/70 hover:text-foreground" // Main page text colors when collapsed
+                : "text-sidebar-foreground/70 hover:text-sidebar-foreground" // Sidebar colors when expanded
+            }`}
+          >
+            <Avatar className="h-7 w-7 flex-shrink-0">
+              <AvatarFallback className="bg-primary text-primary-foreground font-medium text-xs">
                 MS
               </AvatarFallback>
             </Avatar>
+            <span
+              className={`ml-3 text-sm font-medium transition-all duration-300 ease-in-out ${
+                sidebarCollapsed
+                  ? "opacity-0 w-0 translate-x-2"
+                  : "opacity-100 w-auto translate-x-0"
+              }`}
+            >
+              Profile
+            </span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Content - Conditional based on scroll mode */}
+      {scrollMode === "container" ? (
+        // Container scroll mode - for chat page
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Fixed Header */}
+          <div className="flex-shrink-0 p-6 pb-4">
+            <div className="flex items-center gap-3">
+              {/* Search Bar - Full Width */}
+              <SearchBar
+                placeholder="Search your memories..."
+                searchFunction={searchMemories}
+                renderResult={renderMemoryResult}
+                onResultClick={handleResultClick}
+                onViewAllResults={handleViewAllResults}
+                className="flex-1"
+                size="lg"
+                variant="default"
+              />
+
+              {/* New Memory Button */}
+              <Button
+                onClick={() => navigateTo("/new-memory")}
+                className="h-10 px-4"
+              >
+                <Plus size={18} />
+                <span className="ml-2">New Memory</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Scrollable Content Area - children manage their own scroll */}
+          <div className="flex-1 overflow-hidden">{children}</div>
+        </div>
+      ) : (
+        // Page scroll mode - for homepage and other pages with sticky header
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Sticky Header */}
+          <div className="flex-shrink-0 sticky top-0 bg-background/95 backdrop-blur-sm z-10 p-6 pb-4">
+            <div className="flex items-center gap-3">
+              {/* Search Bar - Full Width */}
+              <SearchBar
+                placeholder="Search your memories..."
+                searchFunction={searchMemories}
+                renderResult={renderMemoryResult}
+                onResultClick={handleResultClick}
+                onViewAllResults={handleViewAllResults}
+                className="flex-1"
+                size="lg"
+                variant="default"
+              />
+
+              {/* New Memory Button */}
+              <Button
+                onClick={() => navigateTo("/new-memory")}
+                className="h-10 px-4"
+              >
+                <Plus size={18} />
+                <span className="ml-2">New Memory</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Scrollable Content - IMPROVED: Conditional padding */}
+          <div className="flex-1 overflow-auto custom-scrollbar">
+            <div className={contentPadding ? "p-6 pt-0" : ""}>{children}</div>
           </div>
         </div>
-
-        {/* Page content */}
-        <div className="flex-1 overflow-hidden">{children}</div>
-      </div>
+      )}
     </div>
   );
 }
 
-// Navigation Button Component - keeping custom as it's layout-specific
+// Navigation Button Component - Updated for collapsed state
 function NavButton({
   icon,
   label,
@@ -281,24 +357,44 @@ function NavButton({
 }: NavButtonProps) {
   return (
     <button
-      className={`flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-sidebar-accent transition-colors relative group cursor-pointer ${
-        active
-          ? "bg-sidebar-primary/10 text-sidebar-primary border border-sidebar-primary/20"
-          : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
+      className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200 ease-in-out relative group cursor-pointer overflow-hidden ${
+        collapsed
+          ? // Collapsed state - use main page colors
+            active
+            ? "bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
+            : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
+          : // Expanded state - use sidebar colors
+          active
+          ? "bg-sidebar-primary/10 text-sidebar-primary border border-sidebar-primary/20 hover:bg-sidebar-accent"
+          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
       }`}
       onClick={onClick}
     >
       <div
-        className={
-          active
+        className={`transition-colors duration-200 flex-shrink-0 ${
+          collapsed
+            ? // Collapsed state icons
+              active
+              ? "text-primary"
+              : "text-foreground/60 group-hover:text-foreground/80"
+            : // Expanded state icons
+            active
             ? "text-sidebar-primary"
             : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground/80"
-        }
+        }`}
       >
         {icon}
       </div>
 
-      {!collapsed && <span className="text-sm font-medium">{label}</span>}
+      <span
+        className={`text-sm font-medium transition-all duration-300 ease-in-out ${
+          collapsed
+            ? "opacity-0 w-0 translate-x-2"
+            : "opacity-100 w-auto translate-x-0"
+        }`}
+      >
+        {label}
+      </span>
     </button>
   );
 }

@@ -51,7 +51,7 @@
   /* === COGNOTE BRAND COLORS === */
   --brand-terracotta: #d99873; /* Primary Brand */
   --brand-sage: #a3b18a; /* Secondary/Supporting */
-  --brand-beige: #f5f1e6; /* Neutral Background */
+  --brand-gray: #f1f5f9; /* Clean light gray (replaces beige) */
   --brand-teal: #78c6d0; /* Accent */
   --brand-charcoal: #333333; /* Text/Dark */
 
@@ -72,27 +72,27 @@
   /* Sage green secondary */
   --secondary: #a3b18a; /* Sage green */
   --secondary-foreground: #ffffff; /* White text on sage */
-  --muted: #f5f1e6; /* Warm beige for muted areas */
-  --muted-foreground: #666666; /* Slightly lighter charcoal */
+  --muted: #f1f5f9; /* Clean light gray for muted areas */
+  --muted-foreground: #64748b; /* Slate gray text */
   --accent: #78c6d0; /* Muted teal accent */
   --accent-foreground: #ffffff; /* White text on teal */
 
   /* Light borders and inputs */
-  --border: #e5dcc9; /* Darker beige for borders */
+  --border: #e2e8f0; /* Clean light gray for borders */
   --input: #ffffff; /* White input backgrounds */
   --ring: #d99873; /* Terracotta focus ring */
 
   /* Error state */
   --destructive: #d2691e; /* Warm orange-red that fits brand */
 
-  /* Warm sidebar */
-  --sidebar: #f5f1e6; /* Warm beige */
+  /* Clean gray sidebar */
+  --sidebar: #f8fafc; /* Very light gray */
   --sidebar-foreground: #333333; /* Charcoal */
   --sidebar-primary: #d99873; /* Terracotta */
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8e0d0; /* Slightly darker beige for hover */
+  --sidebar-accent: #f1f5f9; /* Light gray for hover */
   --sidebar-accent-foreground: #333333;
-  --sidebar-border: #e5dcc9; /* Darker beige border */
+  --sidebar-border: #e2e8f0; /* Clean gray border */
   --sidebar-ring: #d99873; /* Terracotta */
 
   /* Memory type colors - Light theme with brand harmony */
@@ -117,8 +117,8 @@
   --memory-idea-border: #dcc5a3; /* Medium peru */
 
   --memory-task: #708090; /* Slate gray - neutral */
-  --memory-task-bg: #f0f1f2; /* Light slate */
-  --memory-task-border: #c1c7cc; /* Medium slate */
+  --memory-task-bg: #f1f5f9; /* Clean light gray bg */
+  --memory-task-border: #cbd5e1; /* Clean gray border */
 
   --memory-note: #20b2aa; /* Light sea green */
   --memory-note-bg: #e0f7f6; /* Light sea green bg */
@@ -153,101 +153,101 @@
 }
 
 .dark {
-  /* === DARK THEME - Cognote Brand === */
-  --background: #1a1916; /* Very dark warm brown */
-  --foreground: #f5f1e6; /* Warm beige text */
+  /* === DARK THEME === */
+  --background: #212121; /* Clean dark gray background */
+  --foreground: #ececec; /* Light gray text */
 
-  /* Dark cards with warmth */
-  --card: #262320; /* Dark warm gray */
-  --card-foreground: #f5f1e6; /* Warm beige text */
-  --popover: #262320;
-  --popover-foreground: #f5f1e6;
+  /* Dark cards with clean grays */
+  --card: #2f2f2f; /* Medium dark gray cards */
+  --card-foreground: #ececec; /* Light gray text */
+  --popover: #2f2f2f;
+  --popover-foreground: #ececec;
 
   /* Brighter terracotta for dark mode */
   --primary: #e6a882; /* Lighter terracotta */
-  --primary-foreground: #1a1916; /* Dark background text */
+  --primary-foreground: #0f172a; /* Dark background text */
 
   /* Dark sage green */
   --secondary: #8fa077; /* Muted sage for dark */
   --secondary-foreground: #1a1916;
-  --muted: #1f1d1a; /* Darker warm brown */
-  --muted-foreground: #9b958a; /* Warm gray text */
+  --muted: #262320; /* Original dark warm gray */
+  --muted-foreground: #94a3b8; /* Light slate gray text */
   --accent: #8bd3dc; /* Brighter teal for dark */
   --accent-foreground: #1a1916;
 
   /* Dark borders */
-  --border: #3d3a35; /* Dark warm gray border */
-  --input: #262320; /* Dark input bg */
+  --border: #3d3a35; /* Original dark warm gray border */
+  --input: #262320; /* Original dark input bg */
   --ring: #e6a882; /* Lighter terracotta focus ring */
 
   /* Dark error state */
   --destructive: #e67e40; /* Brighter warm orange */
 
-  /* Dark sidebar with warmth */
-  --sidebar: #1c1a17; /* Slightly different dark warm */
-  --sidebar-foreground: #f5f1e6;
-  --sidebar-primary: #e6a882;
-  --sidebar-primary-foreground: #1a1916;
-  --sidebar-accent: #2b2823; /* Hover state */
-  --sidebar-accent-foreground: #f5f1e6;
-  --sidebar-border: #3d3a35;
-  --sidebar-ring: #e6a882;
+  /* Dark sidebar */
+  --sidebar: #171717; /* Darker gray sidebar */
+  --sidebar-foreground: #ececec;
+  --sidebar-primary: #c49a7b; /* Muted terracotta */
+  --sidebar-primary-foreground: #212121;
+  --sidebar-accent: #2f2f2f; /* Medium gray hover state */
+  --sidebar-accent-foreground: #ececec;
+  --sidebar-border: #404040;
+  --sidebar-ring: #c49a7b; /* Muted terracotta */
 
-  /* Memory type colors - Dark theme (brighter, warmer versions) */
-  --memory-research: #95d9e3; /* Brighter teal */
+  /* Memory type colors - Dark theme */
+  --memory-research: #6bb6c1; /* Muted teal */
   --memory-research-bg: #1f3a3d; /* Dark teal */
   --memory-research-border: #4a7c85; /* Medium dark teal */
 
-  --memory-product: #e6a882; /* Brighter terracotta */
+  --memory-product: #c49a7b; /* Muted terracotta */
   --memory-product-bg: #3d2e23; /* Dark terracotta */
   --memory-product-border: #7a5a42; /* Medium dark terracotta */
 
-  --memory-meeting: #b8c7a3; /* Brighter sage */
+  --memory-meeting: #8a9c7a; /* Muted sage */
   --memory-meeting-bg: #2b3326; /* Dark sage */
   --memory-meeting-border: #5a6b4f; /* Medium dark sage */
 
-  --memory-learning: #dac520; /* Brighter gold */
+  --memory-learning: #b8a55c; /* Much more muted gold */
   --memory-learning-bg: #3d3418; /* Dark gold */
   --memory-learning-border: #7a6c35; /* Medium dark gold */
 
-  --memory-idea: #dda570; /* Brighter peru */
+  --memory-idea: #c4a089; /* Much more muted peru */
   --memory-idea-bg: #3d2f23; /* Dark peru */
   --memory-idea-border: #7a5e47; /* Medium dark peru */
 
-  --memory-task: #9cada8; /* Brighter slate */
-  --memory-task-bg: #252b2d; /* Dark slate */
-  --memory-task-border: #4f595c; /* Medium dark slate */
+  --memory-task: #999999; /* Muted medium gray */
+  --memory-task-bg: #2f2f2f; /* Medium dark gray */
+  --memory-task-border: #404040; /* Medium gray border */
 
-  --memory-note: #4dd4cc; /* Brighter sea green */
+  --memory-note: #5eb8b3; /* Much more muted sea green */
   --memory-note-bg: #1f3c3a; /* Dark sea green */
   --memory-note-border: #3f7b77; /* Medium dark sea green */
 
-  --memory-document: #4caf50; /* Brighter forest green */
+  --memory-document: #6ba36b; /* Much more muted forest green */
   --memory-document-bg: #1f3520; /* Dark forest green */
   --memory-document-border: #3f6b41; /* Medium dark forest green */
 
-  --memory-link: #f0884d; /* Brighter chocolate */
+  --memory-link: #cc8a66; /* Much more muted chocolate */
   --memory-link-bg: #3d261a; /* Dark chocolate */
   --memory-link-border: #7a4f35; /* Medium dark chocolate */
 
-  --memory-analysis: #b893f0; /* Brighter purple */
+  --memory-analysis: #9c85cc; /* Much more muted purple */
   --memory-analysis-bg: #2f1f3d; /* Dark purple */
   --memory-analysis-border: #5f3f7a; /* Medium dark purple */
 
-  --memory-concept: #85bdc0; /* Brighter cadet blue */
+  --memory-concept: #7aa3a6; /* Much more muted cadet blue */
   --memory-concept-bg: #1f3435; /* Dark cadet blue */
   --memory-concept-border: #3f6a6d; /* Medium dark cadet blue */
 
-  --memory-event: #ff5f7a; /* Brighter crimson */
+  --memory-event: #cc7a8a; /* Much more muted crimson */
   --memory-event-bg: #3d1f26; /* Dark crimson */
   --memory-event-border: #7a3f4c; /* Medium dark crimson */
 
-  /* Dark chart colors */
-  --chart-1: #e6a882; /* Brighter terracotta */
-  --chart-2: #b8c7a3; /* Brighter sage */
-  --chart-3: #95d9e3; /* Brighter teal */
-  --chart-4: #dac520; /* Brighter gold */
-  --chart-5: #9cada8; /* Brighter slate */
+  /* Muted chart colors */
+  --chart-1: #c49a7b; /* Muted terracotta */
+  --chart-2: #8a9c7a; /* Muted sage */
+  --chart-3: #6bb6c1; /* Muted teal */
+  --chart-4: #b8a55c; /* Muted gold */
+  --chart-5: #999999; /* Muted gray */
 }
 
 @layer base {
@@ -269,23 +269,42 @@
     color: var(--accent-foreground) !important;
   }
 
-  /* Improved scrollbar styling with brand colors */
+  /* Custom scrollbar styling - subtle and minimal */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 4px; /* Much thinner */
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-muted;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: var(--brand-terracotta);
+    background-color: #e5e7eb; /* Light gray for light mode */
     border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--brand-sage);
+    background-color: #d1d5db; /* Slightly darker on hover */
+  }
+
+  /* For dark mode */
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #374151; /* Dark gray for dark mode */
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #4b5563; /* Slightly lighter on hover in dark */
+  }
+
+  /* Firefox scrollbar support */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #e5e7eb transparent;
+  }
+
+  .dark * {
+    scrollbar-color: #374151 transparent;
   }
 }
 
@@ -298,8 +317,8 @@
   .brand-sage {
     color: var(--brand-sage);
   }
-  .brand-beige {
-    color: var(--brand-beige);
+  .brand-gray {
+    color: var(--brand-gray);
   }
   .brand-coral {
     color: var(--brand-coral);
@@ -314,8 +333,8 @@
   .bg-brand-sage {
     background-color: var(--brand-sage);
   }
-  .bg-brand-beige {
-    background-color: var(--brand-beige);
+  .bg-brand-gray {
+    background-color: var(--brand-gray);
   }
   .bg-brand-coral {
     background-color: var(--brand-coral);
@@ -330,8 +349,8 @@
   .border-brand-sage {
     border-color: var(--brand-sage);
   }
-  .border-brand-beige {
-    border-color: var(--brand-beige);
+  .border-brand-gray {
+    border-color: var(--brand-gray);
   }
   .border-brand-coral {
     border-color: var(--brand-coral);
@@ -458,6 +477,12 @@
   }
   .memory-event-border {
     border-color: var(--memory-event-border);
+  }
+
+  /* Custom scrollbar utility class */
+  .custom-scrollbar {
+    padding-right: 12px; /* Adds space between content and scrollbar */
+    margin-right: 4px; /* Adds space between scrollbar and page edge */
   }
 }
 
