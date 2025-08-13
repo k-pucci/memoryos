@@ -1,299 +1,362 @@
-// src/app/profile/page.tsx
+// src/app/page.tsx
 "use client";
 
-import React, { useState } from "react";
-import { PageLayout } from "@/components/layout/PageLayout";
-import {
-  User,
-  Clock,
-  Shield,
-  Globe,
-  LifeBuoy,
-  LogOut,
-  ChevronRight,
-  Settings,
-  Save,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+  ArrowRight,
+  Loader2,
+  TrendingUp,
+  BookOpen,
+  Brain,
+  Zap,
+  Tag,
+  BarChart3,
+  Activity,
+  Archive,
+  Clock,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+import { MemoryCard } from "@/components/shared/MemoryCard";
+import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  DashboardLayout,
+  Stack,
+  Grid,
+  Section,
+  SidebarLayout,
+} from "@/components/layout/index";
+import { Memory } from "@/lib/memory-utils";
 
-export default function ProfilePage() {
-  // Form state
-  const [formData, setFormData] = useState({
-    fullName: "Memory Smith",
-    displayName: "Memory Smith",
-    email: "memory.smith@example.com",
-    location: "San Diego, CA",
-    password: "••••••••••••",
-    twoFactor: true,
-  });
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-  // Original values to compare against
-  const originalData = {
-    fullName: "Memory Smith",
-    displayName: "Memory Smith",
-    email: "memory.smith@example.com",
-    location: "San Diego, CA",
-    password: "••••••••••••",
-    twoFactor: true,
-  };
-
-  // Check if form has been modified
-  const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
-
-  // Handle input changes
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // Handle checkbox changes
-  const handleCheckboxChange = (field: string, checked: boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: checked }));
-  };
-
-  // Handle save (placeholder)
-  const handleSave = () => {
-    // Placeholder - no actual saving
-    console.log("Saving profile changes:", formData);
-  };
-  return (
-    <PageLayout
-      currentPage="Profile"
-      title="My Profile"
-      description="Manage your account settings and preferences"
-      actions={
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges}
-          className={cn(
-            "transition-all",
-            !hasChanges && "opacity-50 cursor-not-allowed"
-          )}
-        >
-          <Save size={18} />
-          <span className="ml-2">Save Changes</span>
-        </Button>
-      }
-    >
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Profile Overview */}
-          <div className="lg:w-1/3">
-            <Card className="bg-card border-border card-shadow overflow-hidden">
-              <div className="h-24 bg-gradient-to-r from-primary/30 to-accent/30"></div>
-              <CardContent className="p-6 relative">
-                <Avatar className="h-20 w-20 border-4 border-card absolute -top-10">
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-xl text-white">
-                    MS
-                  </AvatarFallback>
-                </Avatar>
-
-                <div className="mt-12 space-y-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-foreground">
-                      Memory Smith
-                    </h2>
-                    <p className="text-muted-foreground">
-                      memory.smith@example.com
-                    </p>
-                  </div>
-
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock size={14} className="mr-1" />
-                    <span>Member since May 2025</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <div className="px-3 py-1.5 bg-primary/20 text-primary rounded-full text-xs font-medium">
-                      Pro Plan
-                    </div>
-                    <div className="px-3 py-1.5 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                      92 Memories
-                    </div>
-                    <div className="px-3 py-1.5 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                      8 Categories
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Settings */}
-          <div className="flex-1">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-foreground mb-4">
-              <Settings size={20} className="text-primary" />
-              Account Settings
-            </h2>
-
-            <div className="space-y-4">
-              <Card className="bg-card border-border card-shadow">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold flex items-center mb-4 text-foreground">
-                    <User size={16} className="mr-2 text-primary" />
-                    Personal Information
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Full Name
-                      </label>
-                      <Input
-                        value={formData.fullName}
-                        onChange={(e) =>
-                          handleInputChange("fullName", e.target.value)
-                        }
-                        className="bg-background border-border text-foreground"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Display Name
-                      </label>
-                      <Input
-                        value={formData.displayName}
-                        onChange={(e) =>
-                          handleInputChange("displayName", e.target.value)
-                        }
-                        className="bg-background border-border text-foreground"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Email
-                      </label>
-                      <Input
-                        value={formData.email}
-                        onChange={(e) =>
-                          handleInputChange("email", e.target.value)
-                        }
-                        className="bg-background border-border text-foreground"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Location
-                      </label>
-                      <Input
-                        value={formData.location}
-                        onChange={(e) =>
-                          handleInputChange("location", e.target.value)
-                        }
-                        className="bg-background border-border text-foreground"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border-border card-shadow">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold flex items-center mb-4 text-foreground">
-                    <Shield size={16} className="mr-2 text-primary" />
-                    Security
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Password
-                      </label>
-                      <Input
-                        type="password"
-                        defaultValue="••••••••••••"
-                        className="bg-background border-border text-foreground"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="2fa"
-                          className={cn(
-                            "w-4 h-4 rounded text-primary border-2",
-                            "bg-background border-border",
-                            "focus:ring-primary/20 focus:ring-2",
-                            "checked:bg-primary checked:border-primary"
-                          )}
-                          defaultChecked
-                        />
-                        <label
-                          htmlFor="2fa"
-                          className="ml-2 text-sm text-foreground"
-                        >
-                          Enable two-factor authentication
-                        </label>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary/80"
-                      >
-                        Set up
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SettingsCard
-                  icon={<Globe size={16} className="mr-2 text-primary" />}
-                  title="Language & Region"
-                  description="Change language and regional settings"
-                />
-
-                <SettingsCard
-                  icon={<LifeBuoy size={16} className="mr-2 text-primary" />}
-                  title="Support"
-                  description="Get help and contact customer support"
-                />
-              </div>
-
-              <Button variant="destructive" className="mt-6">
-                <LogOut size={16} className="mr-2" />
-                <span>Sign out</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </PageLayout>
-  );
+// Stats interface
+interface Stats {
+  totalMemories: number;
+  totalCategories: number;
+  recentActivity: number;
+  popularTags: { tag: string; count: number }[];
 }
 
-// Settings Card Component
-interface SettingsCardProps {
-  icon: React.ReactNode;
+// Extract StatsCard component for reusability
+function StatsCard({
+  title,
+  value,
+  icon: Icon,
+}: {
   title: string;
-  description: string;
-}
-
-function SettingsCard({ icon, title, description }: SettingsCardProps) {
+  value: number;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+}) {
   return (
-    <Card className="bg-card border-border card-shadow hover:border-primary/30 hover:bg-primary/5 cursor-pointer transition-all">
+    <Card className="bg-card border-border card-shadow">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold flex items-center text-foreground">
-              {icon}
-              {title}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold text-foreground">{value}</p>
           </div>
-          <div className="text-muted-foreground">
-            <ChevronRight size={16} />
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Icon size={20} className="text-primary" />
           </div>
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// Extract PopularTags component
+function PopularTagsCard({ tags }: { tags: { tag: string; count: number }[] }) {
+  return (
+    <Card className="bg-card border-border card-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold flex items-center gap-2 text-foreground">
+            <Tag size={16} className="text-primary" />
+            Popular Tags
+          </h3>
+        </div>
+
+        {tags.length > 0 ? (
+          <Stack space="2">
+            {tags.map((tagData, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-2 bg-muted rounded-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span className="text-sm text-foreground">{tagData.tag}</span>
+                </div>
+                <span className="text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  {tagData.count}
+                </span>
+              </div>
+            ))}
+          </Stack>
+        ) : (
+          <p className="text-sm text-muted-foreground">No tags yet</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Extract InsightsCard component
+function InsightsCard({ stats }: { stats: Stats }) {
+  return (
+    <Card className="bg-card border-border card-shadow">
+      <CardContent className="p-4">
+        <h3 className="font-semibold mb-4 flex items-center gap-2 text-foreground">
+          <TrendingUp size={16} className="brand-sage" />
+          Insights
+        </h3>
+
+        <Stack space="3">
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-xs text-muted-foreground mb-1">
+              Most Active Category
+            </p>
+            <p className="text-sm text-foreground font-medium">
+              {stats.popularTags[0]?.tag || "No data yet"}
+            </p>
+          </div>
+
+          <div className="p-3 bg-muted rounded-lg">
+            <p className="text-xs text-muted-foreground mb-1">Weekly Growth</p>
+            <div className="flex items-center gap-2">
+              <TrendingUp size={14} className="brand-sage" />
+              <p className="text-sm brand-sage font-medium">
+                +{stats.recentActivity} this week
+              </p>
+            </div>
+          </div>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Extract ExploreCard component
+function ExploreCard({ router }: { router: any }) {
+  return (
+    <Card className="bg-card border-border card-shadow">
+      <CardContent className="p-4">
+        <h3 className="font-semibold mb-4 flex items-center gap-2 text-foreground">
+          <Zap size={16} className="brand-coral" />
+          Explore More
+        </h3>
+
+        <Grid cols="2" gap="3">
+          <button
+            onClick={() => router.push("/library")}
+            className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer group"
+          >
+            <BookOpen
+              size={20}
+              className="text-muted-foreground group-hover:text-foreground"
+            />
+            <span className="text-xs text-muted-foreground group-hover:text-foreground">
+              Library
+            </span>
+          </button>
+
+          <button
+            onClick={() => router.push("/new-memory")}
+            className="flex flex-col items-center gap-2 p-3 bg-muted rounded-lg hover:bg-secondary/20 hover:text-foreground transition-all cursor-pointer group"
+          >
+            <Brain
+              size={20}
+              className="text-muted-foreground group-hover:text-foreground"
+            />
+            <span className="text-xs text-muted-foreground group-hover:text-foreground">
+              New Memory
+            </span>
+          </button>
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function HomePage() {
+  const router = useRouter();
+  const [memories, setMemories] = useState<Memory[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalMemories: 0,
+    totalCategories: 0,
+    recentActivity: 0,
+    popularTags: [],
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Fetch memories and stats from Supabase
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+
+        // Fetch recent memories
+        const { data: memoriesData, error: memoriesError } = await supabase
+          .from("memories")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(4);
+
+        if (memoriesError) throw memoriesError;
+
+        // Fetch stats
+        const { data: allMemories, error: statsError } = await supabase
+          .from("memories")
+          .select("category, tags, created_at");
+
+        if (statsError) throw statsError;
+
+        // Calculate stats
+        const categories = new Set(allMemories?.map((m) => m.category) || []);
+        const recentWeek =
+          allMemories?.filter((m) => {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return new Date(m.created_at) > weekAgo;
+          }) || [];
+
+        // Calculate popular tags
+        const tagCounts: Record<string, number> = {};
+        allMemories?.forEach((memory) => {
+          if (memory.tags && Array.isArray(memory.tags)) {
+            memory.tags.forEach((tag) => {
+              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+          }
+        });
+
+        const popularTags = Object.entries(tagCounts)
+          .sort(([, a], [, b]) => b - a)
+          .slice(0, 5)
+          .map(([tag, count]) => ({ tag, count }));
+
+        setMemories(memoriesData || []);
+        setStats({
+          totalMemories: allMemories?.length || 0,
+          totalCategories: categories.size,
+          recentActivity: recentWeek.length,
+          popularTags,
+        });
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+        setError(err.message || "Failed to load data");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // Navigation functions
+  const navigateToMemory = (id: string) => router.push(`/memory/${id}`);
+  const viewAllMemories = () => router.push("/library");
+  const createNewMemory = () => router.push("/new-memory");
+
+  // Sidebar content
+  const sidebar = (
+    <Stack space="6">
+      <PopularTagsCard tags={stats.popularTags} />
+      <InsightsCard stats={stats} />
+      <ExploreCard router={router} />
+    </Stack>
+  );
+
+  return (
+    <DashboardLayout
+      currentPage="Home"
+      title="Welcome back!"
+      description="Here's what's happening with your memories"
+    >
+      <div className="px-6 pb-6">
+        <Stack space="6">
+          {/* Stats Cards */}
+          <Grid cols="2" responsive={{ md: 4 }} gap="4">
+            <StatsCard
+              title="Total Memories"
+              value={stats.totalMemories}
+              icon={Archive}
+            />
+            <StatsCard
+              title="Categories"
+              value={stats.totalCategories}
+              icon={BarChart3}
+            />
+            <StatsCard
+              title="This Week"
+              value={stats.recentActivity}
+              icon={Activity}
+            />
+            <StatsCard
+              title="Popular Tags"
+              value={stats.popularTags.length}
+              icon={Tag}
+            />
+          </Grid>
+
+          {/* Main Content with Sidebar */}
+          <SidebarLayout sidebar={sidebar} mainCols={2} sidebarCols={1}>
+            <Section
+              title="Recent Memories"
+              actions={
+                <button
+                  onClick={viewAllMemories}
+                  className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  View all <ArrowRight size={14} />
+                </button>
+              }
+            >
+              {/* Memories Content */}
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center space-y-4">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+                    <p className="text-muted-foreground">
+                      Loading your memories...
+                    </p>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 text-destructive">
+                  {error}
+                </div>
+              ) : memories.length > 0 ? (
+                <Grid cols="1" responsive={{ xl: 2 }} gap="4">
+                  {memories.map((memory) => (
+                    <MemoryCard
+                      key={memory.id}
+                      memory={memory}
+                      onClick={navigateToMemory}
+                    />
+                  ))}
+                </Grid>
+              ) : (
+                <EmptyState
+                  icon={<Archive />}
+                  title="No memories found"
+                  description="Start building your knowledge base"
+                  action={{
+                    label: "Add Your First Memory",
+                    onClick: createNewMemory,
+                  }}
+                />
+              )}
+            </Section>
+          </SidebarLayout>
+        </Stack>
+      </div>
+    </DashboardLayout>
   );
 }
