@@ -103,8 +103,8 @@ src/
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/cognote.git
-   cd cognote
+   git clone https://github.com/k-pucci/memoryos.git
+   cd memoryos
    ```
 
 2. **Install dependencies**
