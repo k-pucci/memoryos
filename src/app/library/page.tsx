@@ -1,7 +1,7 @@
 //src/app/library/page.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { SearchFilters, FilterState } from "@/components/shared/SearchFilters";
 import { Search, Clock, Loader2, X, Archive, Filter } from "lucide-react";
@@ -29,7 +29,7 @@ function RecentSearches({
   if (searches.length === 0) return null;
 
   return (
-    <div className="mb-4">
+    <div className="mb-2">
       <div className="flex justify-between items-center mb-2">
         <p className="text-sm text-muted-foreground flex items-center">
           <Clock size={14} className="mr-1" /> Quick access to recent searches
@@ -56,7 +56,7 @@ function RecentSearches({
   );
 }
 
-export default function LibraryPage() {
+function LibraryPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -674,5 +674,30 @@ export default function LibraryPage() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    <Suspense
+      fallback={
+        <DashboardLayout
+          currentPage="Library"
+          title="Memory Hub"
+          description="Loading your memory collection..."
+        >
+          <div className="px-6 pb-6">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center space-y-4">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+                <p className="text-muted-foreground">Loading your library...</p>
+              </div>
+            </div>
+          </div>
+        </DashboardLayout>
+      }
+    >
+      <LibraryPageContent />
+    </Suspense>
   );
 }
