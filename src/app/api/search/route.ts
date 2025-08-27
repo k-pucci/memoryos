@@ -1,80 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+// src/app/api/search/route.ts
+import { SearchService } from '@/lib/services/search-service';
+import { AnalyticsService } from '@/lib/services/analytics-service';
+import { ApiResponse } from '@/lib/api/response-utils';
+import { validateSearchInput } from '@/lib/api/validation-utils';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
+  const startTime = Date.now();
+  let searchType: 'semantic' | 'text' = 'text';
+  
   try {
-    const {
-      query,
-      embedding,
-      threshold = 0.7,
-      limit = 10,
-    } = await request.json();
-
-    if (!query || query.trim() === "") {
-      return NextResponse.json({ error: "Query is required" }, { status: 400 });
-    }
-
-    let results = [];
-
-    // If embedding is provided, use semantic search
-    if (embedding && Array.isArray(embedding) && embedding.length === 384) {
-      try {
-        console.log("🔍 Using semantic search with embedding");
-        const { data, error } = await supabase.rpc("match_memories", {
-          query_embedding: embedding,
-          match_threshold: threshold,
-          match_count: limit,
-          filter_category: null,
-        });
-
-        if (error) {
-          console.error("Vector search RPC error:", error);
-          throw error;
-        }
-
-        results = data || [];
-        console.log(`✅ Semantic search found ${results.length} results`);
-      } catch (error) {
-        console.error("Vector search error:", error);
-        // Fallback to text search
-        console.log("🔄 Falling back to text search");
-        results = await performTextSearch(query, limit);
-      }
-    } else {
-      console.log("📝 Using text search (no valid embedding)");
-      // Fallback to text search
-      results = await performTextSearch(query, limit);
-    }
-
-    return NextResponse.json({
-      results,
-      query,
-      count: results.length,
-      searchType: embedding && embedding.length === 384 ? "semantic" : "text",
+    const body = await request.json();
+    const input = validateSearchInput(body);
+    
+    const result = await SearchService.searchMemories(input);
+    searchType = result.searchType;
+    
+    // Track search analytics
+    await AnalyticsService.trackSearchPerformed({
+      user_id: input.user_id,
+      query: input.query,
+      exclude_ids: input.exclude_ids || [],
+      resultsCount: result.resultsCount,
+      searchType: result.searchType,
+      hasEmbedding: !!input.embedding,
+      startTime,
+      limit: input.limit || 10
     });
-  } catch (error) {
+    
+    return ApiResponse.success(result);
+  } catch (error: any) {
     console.error("Search error:", error);
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
+    
+    await AnalyticsService.trackSearchFailed(searchType, error, startTime);
+    
+    return ApiResponse.serverError({ error: "Search failed" });
+  } finally {
+    await AnalyticsService.shutdown();
   }
-}
-
-async function performTextSearch(query: string, limit: number) {
-  const { data, error } = await supabase
-    .from("memories")
-    .select("id, title, content, category, tags, created_at")
-    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    console.error("Text search error:", error);
-    return [];
-  }
-
-  return data || [];
 }

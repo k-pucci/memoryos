@@ -39,7 +39,7 @@ interface Memory {
 }
 
 export class MemoryAssistant {
-  private readonly systemPrompt = `You are a Memory Assistant, a helpful AI that specializes in organizing, searching, and summarizing personal memories and knowledge.
+  private readonly systemPrompt = `You are a memory assistant, a helpful AI that specializes in organizing, searching, and summarizing personal memories and knowledge.
 
 Your capabilities:
 - Search through memories using semantic similarity

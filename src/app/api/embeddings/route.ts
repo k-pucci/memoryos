@@ -1,39 +1,20 @@
-import { pipeline } from "@xenova/transformers";
-import { NextRequest, NextResponse } from "next/server";
+// src/app/api/embeddings/route.ts
+import { EmbeddingService } from '@/lib/services/embedding-service';
+import { ApiResponse } from '@/lib/api/response-utils';
+import { validateEmbeddingInput } from '@/lib/api/validation-utils';
 
-let embedder: any = null;
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const { text } = await request.json();
-
-    if (!text) {
-      return NextResponse.json({ error: "Text is required" }, { status: 400 });
-    }
-
-    // Initialize embedder if not already done
-    if (!embedder) {
-      console.log("🤖 Loading embedding model...");
-      embedder = await pipeline(
-        "feature-extraction",
-        "Xenova/all-MiniLM-L6-v2"
-      );
-      console.log("✅ Embedding model loaded!");
-    }
-
-    const output = await embedder(text, {
-      pooling: "mean",
-      normalize: true,
-    });
-
-    return NextResponse.json({
-      embedding: Array.from(output.data),
-    });
-  } catch (error) {
+    const body = await request.json();
+    const { text } = validateEmbeddingInput(body);
+    
+    const embedding = await EmbeddingService.generateEmbedding(text);
+    
+    return ApiResponse.success({ embedding });
+  } catch (error: any) {
     console.error("Embedding API error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate embedding" },
-      { status: 500 }
-    );
+    return ApiResponse.serverError({
+      error: "Failed to generate embedding"
+    });
   }
 }

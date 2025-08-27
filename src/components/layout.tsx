@@ -1,7 +1,7 @@
-// components/layout.tsx - Updated with blended collapsed sidebar
+// components/layout.tsx - Clean persistent sidebar state without hydration issues
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ interface LayoutProps {
   children: React.ReactNode;
   currentPage?: string;
   scrollMode?: "page" | "container";
-  contentPadding?: boolean; // New prop to control content padding
+  contentPadding?: boolean;
 }
 
 interface NavButtonProps {
@@ -50,12 +50,46 @@ export default function Layout({
   children,
   currentPage = "Home",
   scrollMode = "page",
-  contentPadding = true, // Default to true for backward compatibility
+  contentPadding = true,
 }: LayoutProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  // Initialize with saved state immediately to prevent flash
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar-collapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+  
+  // Track if this is the initial render to prevent transition animation
+  const [isInitialRender, setIsInitialRender] = useState(true);
+  
   const router = useRouter();
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+
+  // After first render, enable transitions
+  useEffect(() => {
+    // Use requestAnimationFrame to ensure DOM has fully painted
+    const enableTransitions = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsInitialRender(false);
+        });
+      });
+    };
+    
+    enableTransitions();
+  }, []);
+
+  // Save to localStorage whenever sidebar state changes
+  const handleSidebarToggle = () => {
+    const newCollapsed = !sidebarCollapsed;
+    setSidebarCollapsed(newCollapsed);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebar-collapsed', JSON.stringify(newCollapsed));
+    }
+  };
 
   // Navigation items with their paths
   const navItems: NavItem[] = [
@@ -134,16 +168,19 @@ export default function Layout({
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen bg-background text-foreground" suppressHydrationWarning>
       {/* Sidebar */}
       <div
         className={`${
           sidebarCollapsed ? "w-20" : "w-64"
-        } transition-all duration-300 ease-in-out p-4 flex flex-col gap-4 relative border-r overflow-hidden ${
+        } ${
+          isInitialRender ? "" : "transition-all duration-300 ease-in-out"
+        } p-4 flex flex-col gap-4 relative border-r overflow-hidden ${
           sidebarCollapsed
-            ? "bg-background border-border/50" // Blended background when collapsed
-            : "bg-sidebar border-sidebar-border" // Normal sidebar colors when expanded
+            ? "bg-background border-border/50"
+            : "bg-sidebar border-sidebar-border"
         }`}
+        suppressHydrationWarning
       >
         {/* Header */}
         <div
@@ -164,11 +201,11 @@ export default function Layout({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onClick={handleSidebarToggle}
             className={`transition-colors duration-200 ${
               sidebarCollapsed
-                ? "text-foreground/60 hover:text-foreground" // Main page text colors when collapsed
-                : "text-sidebar-foreground/60 hover:text-sidebar-foreground" // Sidebar colors when expanded
+                ? "text-foreground/60 hover:text-foreground"
+                : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
             }`}
           >
             <Menu size={18} />
@@ -203,15 +240,15 @@ export default function Layout({
             onClick={toggleTheme}
             className={`justify-start transition-colors duration-200 overflow-hidden ${
               sidebarCollapsed
-                ? "text-foreground/70 hover:text-foreground" // Main page text colors when collapsed
-                : "text-sidebar-foreground/70 hover:text-sidebar-foreground" // Sidebar colors when expanded
+                ? "text-foreground/70 hover:text-foreground"
+                : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
             }`}
           >
             <div
               className={`flex-shrink-0 ${
                 sidebarCollapsed
-                  ? "text-foreground/60" // Main page text colors when collapsed
-                  : "text-sidebar-foreground/60" // Sidebar colors when expanded
+                  ? "text-foreground/60"
+                  : "text-sidebar-foreground/60"
               }`}
             >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -242,8 +279,8 @@ export default function Layout({
           <div
             className={`my-2 ${
               sidebarCollapsed
-                ? "border-t border-border" // Main page border color when collapsed
-                : "border-t border-sidebar-border" // Sidebar border color when expanded
+                ? "border-t border-border"
+                : "border-t border-sidebar-border"
             }`}
           />
 
@@ -253,8 +290,8 @@ export default function Layout({
             onClick={() => navigateTo("/profile")}
             className={`justify-start p-3 transition-colors duration-200 overflow-hidden ${
               sidebarCollapsed
-                ? "text-foreground/70 hover:text-foreground" // Main page text colors when collapsed
-                : "text-sidebar-foreground/70 hover:text-sidebar-foreground" // Sidebar colors when expanded
+                ? "text-foreground/70 hover:text-foreground"
+                : "text-sidebar-foreground/70 hover:text-sidebar-foreground"
             }`}
           >
             <Avatar className="h-7 w-7 flex-shrink-0">

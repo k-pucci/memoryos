@@ -418,7 +418,7 @@ function ChatInput({
           <div className="relative flex-1">
             <textarea
               ref={textareaRef}
-              placeholder="Type your message... Use @ to mention agents"
+              placeholder="Type your message..."
               className={cn(
                 "w-full min-h-[44px] max-h-[120px] px-0 py-0",
                 "bg-transparent border-0",
