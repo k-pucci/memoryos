@@ -3,10 +3,11 @@
 'use client'
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export function PostHogProvider({ children }: { children: React.ReactNode }) {
+// Component that uses useSearchParams - needs to be wrapped in Suspense
+function PostHogTracker({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
@@ -34,8 +35,6 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Track page views manually for better control
-  // Only in production where PostHog is initialized
   useEffect(() => {
     if (pathname && typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
       const url = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '')
@@ -51,6 +50,15 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, searchParams])
 
   return <PHProvider client={posthog}>{children}</PHProvider>
+}
+
+// Main provider component with Suspense boundary
+export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div>{children}</div>}>
+      <PostHogTracker>{children}</PostHogTracker>
+    </Suspense>
+  )
 }
 
 // Alternative: Create a mock PostHog for development
