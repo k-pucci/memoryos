@@ -1,6 +1,7 @@
 // app/api/health/route.ts
 import { ApiResponse } from "@/lib/api/clients";
 import { SystemService } from "@/lib/services/system-service";
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);

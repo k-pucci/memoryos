@@ -1,8 +1,6 @@
 // lib/services/analytics-service.ts
 import { posthog } from '@/lib/api/clients';
-import { CreateMemoryInput, UpdateMemoryInput } from '@/lib/api/validation-utils';
-import type { CreateMemoryInput } from '@/lib/api/validation-utils';
-
+import { CreateMemoryInput } from '@/lib/api/validation-utils';
 
 
 export class AnalyticsService {
