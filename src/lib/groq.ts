@@ -58,7 +58,7 @@ Create organized summaries that capture the key insights and main points from th
     );
 
     const completion = await groq.chat.completions.create({
-      model: "llama3-8b-8192",
+      model: "openai/gpt-oss-20b",
       messages: [
         {
           role: "system",

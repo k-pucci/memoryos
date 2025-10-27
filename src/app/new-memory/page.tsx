@@ -64,7 +64,7 @@ export default function NewMemoryPage() {
   const [formData, setFormData] = useState({
     title: "",
     category: "Research",
-    memory_type: "note",
+    memory_type: "Note",
     content: "",
   });
 
@@ -348,12 +348,12 @@ export default function NewMemoryPage() {
                     setFormData((prev) => ({ ...prev, memory_type: value }))
                   }
                   options={[
-                    { value: "note", label: "Note" },
-                    { value: "link", label: "Link" },
-                    { value: "document", label: "Document" },
-                    { value: "analysis", label: "Analysis" },
-                    { value: "concept", label: "Concept" },
-                    { value: "event", label: "Event" },
+                    { value: "Note", label: "Note" },
+                    { value: "Meeting", label: "Meeting" },
+                    { value: "Idea", label: "Idea" },
+                    { value: "Task", label: "Task" },
+                    { value: "Research", label: "Research" },
+                    { value: "Learning", label: "Learning" },
                   ]}
                 />
               </div>

@@ -144,21 +144,12 @@ function LibraryPageContent() {
   const fetchMemories = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/memories/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: "",
-          limit: 50,
-        }),
-      });
-
+      const response = await fetch("/api/memories?limit=50");
+  
       if (!response.ok) {
         throw new Error("Failed to fetch memories");
       }
-
+  
       const data = await response.json();
       setMemories(data.results || []);
       setMode("browse");

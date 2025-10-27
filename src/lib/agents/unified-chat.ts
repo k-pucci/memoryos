@@ -1,11 +1,6 @@
-// lib/agents/unified-chat.ts
-import { createClient } from "@supabase/supabase-js";
+// lib/agents/unified-chat.ts - Corrected version
 import Groq from "groq-sdk";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { InternalSearchService } from '@/lib/services/search-service-internal';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY!,
@@ -47,6 +42,7 @@ Your capabilities:
 - Extract insights and patterns from stored information
 - Help organize and understand personal knowledge
 - Provide actionable insights from meeting notes and action items
+- Create weekly reviews and summaries of recent activities
 
 Guidelines:
 - Always reference specific memories when providing information
@@ -55,19 +51,21 @@ Guidelines:
 - Highlight important action items, next steps, and deadlines
 - Be concise but comprehensive in your responses
 - If you can't find relevant memories, say so clearly
+- For weekly reviews, focus on the past 7 days of activities
 
 Remember: You're working with the user's personal memory collection, so be helpful in organizing and surfacing their stored knowledge.`;
 
   async processMessage(
     message: string,
+    userId: string,
     embedding: number[],
     chatHistory: ChatMessage[] = []
   ) {
-    console.log("💬 Processing memory assistant message:", message);
+    console.log("Processing memory assistant message:", message, "for user:", userId);
 
-    // Search for relevant memories
-    const relevantMemories = await this.searchMemories(message, embedding);
-    console.log(`🔍 Found ${relevantMemories.length} relevant memories`);
+    // Search for relevant memories using the internal search service
+    const relevantMemories = await this.searchMemories(message, userId, embedding);
+    console.log(`Found ${relevantMemories.length} relevant memories`);
 
     // Generate response
     const response = await this.generateResponse(
@@ -87,70 +85,45 @@ Remember: You're working with the user's personal memory collection, so be helpf
 
   private async searchMemories(
     query: string,
+    userId: string,
     embedding: number[]
   ): Promise<Memory[]> {
     try {
-      // First try semantic search with embeddings
-      let memories: Memory[] = [];
-
-      if (embedding && embedding.length > 0) {
-        const { data: semanticResults, error: semanticError } =
-          await supabase.rpc("match_memories_enhanced", {
-            query_embedding: embedding,
-            match_threshold: 0.3,
-            match_count: 15,
-            filter_category: null,
-            filter_memory_type: null,
-            date_from: null,
-            date_to: null,
-          });
-
-        if (!semanticError && semanticResults) {
-          memories = semanticResults;
-          console.log(`📊 Semantic search found ${memories.length} memories`);
-        }
-      }
-
-      // If semantic search didn't find much, try keyword search
-      if (memories.length < 3) {
-        const keywordResults = await this.performKeywordSearch(query);
-        memories = [...memories, ...keywordResults];
-        console.log(`🔤 Added ${keywordResults.length} from keyword search`);
-      }
-
-      // Remove duplicates and limit results
-      const uniqueMemories = memories.filter(
-        (memory, index, self) =>
-          index === self.findIndex((m) => m.id === memory.id)
+      const memories = await InternalSearchService.searchMemoriesForUser(
+        query,
+        userId,
+        embedding,
+        15
       );
 
-      return uniqueMemories.slice(0, 10);
+      // Filter for weekly review if needed
+      if (this.isWeeklyReviewQuery(query)) {
+        console.log("Filtering for weekly review (past 7 days)");
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        const weeklyMemories = memories.filter((memory: Memory) => 
+          new Date(memory.created_at) >= weekAgo
+        );
+        
+        console.log(`Found ${weeklyMemories.length} memories from past week`);
+        return weeklyMemories;
+      }
+
+      return memories;
     } catch (error) {
-      console.error("❌ Memory search error:", error);
+      console.error("Memory search error:", error);
       return [];
     }
   }
 
-  private async performKeywordSearch(query: string): Promise<Memory[]> {
-    try {
-      const queryLower = query.toLowerCase();
-
-      const { data, error } = await supabase
-        .from("memories")
-        .select("*")
-        .or(
-          `title.ilike.%${queryLower}%,content.ilike.%${queryLower}%,summary.ilike.%${queryLower}%`
-        )
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(8);
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error("❌ Keyword search error:", error);
-      return [];
-    }
+  private isWeeklyReviewQuery(query: string): boolean {
+    const queryLower = query.toLowerCase();
+    return queryLower.includes("weekly review") || 
+           queryLower.includes("week review") ||
+           queryLower.includes("this week") ||
+           queryLower.includes("past week") ||
+           (queryLower.includes("review") && queryLower.includes("week"));
   }
 
   private async generateResponse(
@@ -175,13 +148,13 @@ Remember: You're working with the user's personal memory collection, so be helpf
 
     try {
       const completion = await groq.chat.completions.create({
-        model: "llama3-70b-8192", // Use the more capable model
+        model: "openai/gpt-oss-20b",
         messages: [
           { role: "system", content: this.systemPrompt },
           { role: "user", content: contextPrompt },
         ],
         max_tokens: 800,
-        temperature: 0.4, // Lower temperature for more focused responses
+        temperature: 0.4,
       });
 
       return {
@@ -190,7 +163,7 @@ Remember: You're working with the user's personal memory collection, so be helpf
           "I couldn't generate a response. Please try again.",
       };
     } catch (error) {
-      console.error("❌ Response generation error:", error);
+      console.error("Response generation error:", error);
       return {
         content:
           "I'm having trouble generating a response right now. Please try again.",
@@ -256,35 +229,12 @@ Remember: You're working with the user's personal memory collection, so be helpf
     prompt += `Instructions:
 - Answer the user's query using the provided memories as your knowledge base
 - Reference specific memories by their titles when citing information
-- If asked to summarize, organize the information clearly with sections/headings
+- If asked to summarize or create a weekly review, organize the information clearly with sections/headings
 - Include relevant dates, categories, and details from the memories
 - If action items or next steps are relevant, highlight them clearly
+- For weekly reviews, group memories by category and highlight key activities, achievements, and next steps
 - If no relevant memories are found, say so and ask the user to be more specific`;
 
     return prompt;
-  }
-
-  // Utility method to analyze query intent
-  private analyzeQueryIntent(query: string): string {
-    const queryLower = query.toLowerCase();
-
-    if (queryLower.includes("summarize") || queryLower.includes("summary")) {
-      return "summarize";
-    }
-    if (
-      queryLower.includes("action") ||
-      queryLower.includes("todo") ||
-      queryLower.includes("task")
-    ) {
-      return "action_items";
-    }
-    if (queryLower.includes("meeting") || queryLower.includes("call")) {
-      return "meetings";
-    }
-    if (queryLower.includes("recent") || queryLower.includes("latest")) {
-      return "recent";
-    }
-
-    return "general";
   }
 }

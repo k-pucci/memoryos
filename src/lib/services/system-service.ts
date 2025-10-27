@@ -1,12 +1,12 @@
 // lib/services/system-service.ts - Enhanced system checks
-import { supabase } from '@/lib/api/clients';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export class SystemService {
  static async checkMemoriesTable() {
    // Check if memories table exists and has the expected structure
    console.log('Checking table structure...');
    
-   const { data: tableInfo, error: tableError } = await supabase
+   const { data: tableInfo, error: tableError } = await supabaseAdmin
      .from('memories')
      .select('*')
      .limit(0);
@@ -31,7 +31,7 @@ export class SystemService {
  }
 
  static async checkPgVector() {
-   const { data: pgvectorInfo, error: pgvectorError } = await supabase
+   const { data: pgvectorInfo, error: pgvectorError } = await supabaseAdmin
      .rpc('check_extension', { extension_name: 'vector' });
      
    return {
@@ -41,7 +41,7 @@ export class SystemService {
  }
 
  static async checkFunctions() {
-   const { data: functionInfo, error: functionError } = await supabase
+   const { data: functionInfo, error: functionError } = await supabaseAdmin
      .rpc('get_category_counts');
      
    return {
@@ -95,7 +95,7 @@ export class SystemService {
    const startTime = Date.now();
    
    // Test Supabase connectivity
-   const { data, error } = await supabase.auth.getSession();
+   const { data, error } = await supabaseAdmin.auth.getSession();
    
    const endTime = Date.now();
    const responseTime = endTime - startTime;

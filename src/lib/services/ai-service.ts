@@ -1,5 +1,5 @@
-// lib/services/ai-service.ts - AI operations extracted
-import { groq } from '@/lib/api/clients';
+// lib/services/ai-service.ts - Updated imports
+import { groq } from '@/lib/groq';
 
 export class AIService {
   static async generateSummary(content: string): Promise<string> {
@@ -10,7 +10,7 @@ export class AIService {
     try {
       console.log("🧠 Generating summary with Groq...");
       const summaryResponse = await groq.chat.completions.create({
-        model: "llama3-8b-8192",
+        model: "openai/gpt-oss-20b",
         messages: [
           {
             role: "system",

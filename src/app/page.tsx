@@ -14,10 +14,10 @@ import {
   BarChart3,
   Activity,
   Archive,
-  Clock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { MemoryCard } from "@/components/shared/MemoryCard";
 import { EmptyState } from "@/components/shared/EmptyState";
 import {
@@ -28,11 +28,6 @@ import {
   SidebarLayout,
 } from "@/components/layout/index";
 import { Memory } from "@/lib/memory-utils";
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Stats interface
 interface Stats {
@@ -183,8 +178,10 @@ function ExploreCard({ router }: { router: any }) {
   );
 }
 
+// Main component
 export default function HomePage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalMemories: 0,
@@ -195,25 +192,42 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, authLoading, router]);
+
   // Fetch memories and stats from Supabase
   useEffect(() => {
+    // Early return if no user or still loading auth
+    if (!user || authLoading) return;
+
     async function fetchData() {
+      // Additional null check inside fetchData for TypeScript
+      if (!user) return;
+      
+      const supabase = createClient();
+      
       try {
         setIsLoading(true);
 
-        // Fetch recent memories
+        // Fetch recent memories for this user
         const { data: memoriesData, error: memoriesError } = await supabase
           .from("memories")
           .select("*")
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(4);
 
         if (memoriesError) throw memoriesError;
 
-        // Fetch stats
+        // Fetch stats for this user
         const { data: allMemories, error: statsError } = await supabase
           .from("memories")
-          .select("category, tags, created_at");
+          .select("category, tags, created_at")
+          .eq("user_id", user.id);
 
         if (statsError) throw statsError;
 
@@ -257,7 +271,24 @@ export default function HomePage() {
     }
 
     fetchData();
-  }, []);
+  }, [user, authLoading]); // Added authLoading to dependencies
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!user) {
+    return null;
+  }
 
   // Navigation functions
   const navigateToMemory = (id: string) => router.push(`/memory/${id}`);

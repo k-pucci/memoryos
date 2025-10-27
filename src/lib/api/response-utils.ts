@@ -1,5 +1,6 @@
-// lib/api/response-utils.ts - Standardized responses
+// lib/api/response-utils.ts - Updated imports
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/supabase/server";
 
 export const ApiResponse = {
   success: <T>(data: T, status = 200) => 
@@ -20,5 +21,30 @@ export const ApiResponse = {
         details: error.details,
       }
     }, { status: 500 });
-  }
+  },
+
+  unauthorized: (message = "Authentication required") =>
+    NextResponse.json({ error: message }, { status: 401 }),
+    
+  forbidden: (message = "Access denied") =>
+    NextResponse.json({ error: message }, { status: 403 })
 };
+
+// Auth middleware for API routes
+export async function withAuth(
+  request: Request,
+  handler: (request: Request, user: any) => Promise<NextResponse>
+) {
+  try {
+    const user = await getAuthenticatedUser();
+        
+    if (!user) {
+      return ApiResponse.unauthorized();
+    }
+        
+    return await handler(request, user);
+  } catch (error) {
+    console.error("Auth middleware error:", error);
+    return ApiResponse.serverError(error);
+  }
+}

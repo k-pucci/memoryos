@@ -1,7 +1,7 @@
 // src/app/profile/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PageLayout } from "@/components/layout/PageLayout";
 import {
   User,
@@ -13,52 +13,222 @@ import {
   ChevronRight,
   Settings,
   Save,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
+interface UserProfile {
+  id: string;
+  full_name: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  location: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface UserStats {
+  memoriesCount: number;
+  categoriesCount: number;
+  memberSince: string;
+}
 
 export default function ProfilePage() {
+  const { user, signOut, loading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
   // Form state
   const [formData, setFormData] = useState({
-    fullName: "Memory Smith",
-    displayName: "Memory Smith",
-    email: "memory.smith@example.com",
-    location: "San Diego, CA",
-    password: "••••••••••••",
-    twoFactor: true,
+    fullName: "",
+    displayName: "",
+    email: "",
+    location: "",
   });
 
   // Original values to compare against
-  const originalData = {
-    fullName: "Memory Smith",
-    displayName: "Memory Smith",
-    email: "memory.smith@example.com",
-    location: "San Diego, CA",
-    password: "••••••••••••",
-    twoFactor: true,
-  };
+  const [originalData, setOriginalData] = useState({
+    fullName: "",
+    displayName: "",
+    email: "",
+    location: "",
+  });
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/auth/login");
+    }
+  }, [user, authLoading, router]);
+
+  // Load profile data
+  useEffect(() => {
+    if (!user) return;
+
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+
+        // Get profile
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        // Get user stats
+        const [memoriesResult, categoriesResult] = await Promise.all([
+          supabase
+            .from("memories")
+            .select("id", { count: "exact" })
+            .eq("user_id", user.id),
+          supabase
+            .from("memories")
+            .select("category")
+            .eq("user_id", user.id)
+        ]);
+
+        const memoriesCount = memoriesResult.count || 0;
+        const uniqueCategories = new Set(
+          categoriesResult.data?.map(item => item.category) || []
+        );
+
+        setProfile(profileData);
+        setStats({
+          memoriesCount,
+          categoriesCount: uniqueCategories.size,
+          memberSince: new Date(user.created_at).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+          }),
+        });
+
+        // Set form data
+        const formValues = {
+          fullName: profileData?.full_name || "",
+          displayName: profileData?.display_name || "",
+          email: user.email || "",
+          location: profileData?.location || "",
+        };
+        
+        setFormData(formValues);
+        setOriginalData(formValues);
+
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        toast.error("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user, supabase]);
 
   // Check if form has been modified
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
 
   // Handle input changes
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Handle checkbox changes
-  const handleCheckboxChange = (field: string, checked: boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: checked }));
+  // Handle save
+  const handleSave = async () => {
+    if (!user || !hasChanges || saving) return;
+
+    setSaving(true);
+    
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: formData.fullName.trim() || null,
+          display_name: formData.displayName.trim() || null,
+          location: formData.location.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Update original data to reflect saved state
+      setOriginalData({ ...formData });
+      
+      // Update local profile state
+      if (profile) {
+        setProfile({
+          ...profile,
+          full_name: formData.fullName.trim() || null,
+          display_name: formData.displayName.trim() || null,
+          location: formData.location.trim() || null,
+          updated_at: new Date().toISOString(),
+        });
+      }
+      
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile: " + (error.message || "Unknown error"));
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Handle save (placeholder)
-  const handleSave = () => {
-    // Placeholder - no actual saving
-    console.log("Saving profile changes:", formData);
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push("/auth/login");
+      toast.success("Signed out successfully");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast.error("Failed to sign out");
+    }
   };
+
+  // Show loading while checking auth or loading profile
+  if (authLoading || loading) {
+    return (
+      <PageLayout currentPage="Profile" title="My Profile" description="Loading...">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-48 bg-muted rounded-lg"></div>
+            <div className="h-96 bg-muted rounded-lg"></div>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Don't render if not authenticated
+  if (!user || !profile || !stats) {
+    return null;
+  }
+
+  // Generate user initials
+  const displayName = formData.displayName || formData.fullName || "User";
+  const initials = displayName
+    .split(" ")
+    .map(n => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <PageLayout
       currentPage="Profile"
@@ -67,14 +237,23 @@ export default function ProfilePage() {
       actions={
         <Button
           onClick={handleSave}
-          disabled={!hasChanges}
+          disabled={!hasChanges || saving}
           className={cn(
             "transition-all",
-            !hasChanges && "opacity-50 cursor-not-allowed"
+            (!hasChanges || saving) && "opacity-50 cursor-not-allowed"
           )}
         >
-          <Save size={18} />
-          <span className="ml-2">Save Changes</span>
+          {saving ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span className="ml-2">Saving...</span>
+            </>
+          ) : (
+            <>
+              <Save size={18} />
+              <span className="ml-2">Save Changes</span>
+            </>
+          )}
         </Button>
       }
     >
@@ -87,34 +266,32 @@ export default function ProfilePage() {
               <CardContent className="p-6 relative">
                 <Avatar className="h-20 w-20 border-4 border-card absolute -top-10">
                   <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-xl text-white">
-                    MS
+                    {initials}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="mt-12 space-y-4">
                   <div>
                     <h2 className="text-xl font-bold text-foreground">
-                      Memory Smith
+                      {displayName}
                     </h2>
-                    <p className="text-muted-foreground">
-                      memory.smith@example.com
-                    </p>
+                    <p className="text-muted-foreground">{user.email}</p>
                   </div>
 
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Clock size={14} className="mr-1" />
-                    <span>Member since May 2025</span>
+                    <span>Member since {stats.memberSince}</span>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
                     <div className="px-3 py-1.5 bg-primary/20 text-primary rounded-full text-xs font-medium">
-                      Pro Plan
+                      Free Plan
                     </div>
                     <div className="px-3 py-1.5 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                      92 Memories
+                      {stats.memoriesCount} Memories
                     </div>
                     <div className="px-3 py-1.5 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                      8 Categories
+                      {stats.categoriesCount} Categories
                     </div>
                   </div>
                 </div>
@@ -148,6 +325,7 @@ export default function ProfilePage() {
                           handleInputChange("fullName", e.target.value)
                         }
                         className="bg-background border-border text-foreground"
+                        placeholder="Enter your full name"
                       />
                     </div>
 
@@ -161,6 +339,7 @@ export default function ProfilePage() {
                           handleInputChange("displayName", e.target.value)
                         }
                         className="bg-background border-border text-foreground"
+                        placeholder="Enter your display name"
                       />
                     </div>
 
@@ -170,11 +349,12 @@ export default function ProfilePage() {
                       </label>
                       <Input
                         value={formData.email}
-                        onChange={(e) =>
-                          handleInputChange("email", e.target.value)
-                        }
-                        className="bg-background border-border text-foreground"
+                        disabled
+                        className="bg-muted border-border text-muted-foreground cursor-not-allowed"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Email cannot be changed here. Contact support if needed.
+                      </p>
                     </div>
 
                     <div>
@@ -187,6 +367,7 @@ export default function ProfilePage() {
                           handleInputChange("location", e.target.value)
                         }
                         className="bg-background border-border text-foreground"
+                        placeholder="Enter your location"
                       />
                     </div>
                   </div>
@@ -202,43 +383,19 @@ export default function ProfilePage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">
-                        Password
-                      </label>
-                      <Input
-                        type="password"
-                        defaultValue="••••••••••••"
-                        className="bg-background border-border text-foreground"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="2fa"
-                          className={cn(
-                            "w-4 h-4 rounded text-primary border-2",
-                            "bg-background border-border",
-                            "focus:ring-primary/20 focus:ring-2",
-                            "checked:bg-primary checked:border-primary"
-                          )}
-                          defaultChecked
-                        />
-                        <label
-                          htmlFor="2fa"
-                          className="ml-2 text-sm text-foreground"
-                        >
-                          Enable two-factor authentication
-                        </label>
-                      </div>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-primary hover:text-primary/80"
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          // Future: Implement password change functionality
+                          toast("Password change feature coming soon!");
+                        }}
                       >
-                        Set up
+                        Change Password
                       </Button>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Use a strong, unique password to protect your account.
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -249,16 +406,22 @@ export default function ProfilePage() {
                   icon={<Globe size={16} className="mr-2 text-primary" />}
                   title="Language & Region"
                   description="Change language and regional settings"
+                  onClick={() => toast("Language settings coming soon!")}
                 />
 
                 <SettingsCard
                   icon={<LifeBuoy size={16} className="mr-2 text-primary" />}
                   title="Support"
                   description="Get help and contact customer support"
+                  onClick={() => toast("Support features coming soon!")}
                 />
               </div>
 
-              <Button variant="destructive" className="mt-6">
+              <Button 
+                variant="destructive" 
+                className="mt-6"
+                onClick={handleSignOut}
+              >
                 <LogOut size={16} className="mr-2" />
                 <span>Sign out</span>
               </Button>
@@ -275,11 +438,15 @@ interface SettingsCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
+  onClick?: () => void;
 }
 
-function SettingsCard({ icon, title, description }: SettingsCardProps) {
+function SettingsCard({ icon, title, description, onClick }: SettingsCardProps) {
   return (
-    <Card className="bg-card border-border card-shadow hover:border-primary/30 hover:bg-primary/5 cursor-pointer transition-all">
+    <Card 
+      className="bg-card border-border card-shadow hover:border-primary/30 hover:bg-primary/5 cursor-pointer transition-all"
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
