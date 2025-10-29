@@ -1,4 +1,3 @@
-// app/auth/reset-password/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -16,6 +15,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     // Check if we have the recovery token
@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      const { error } = await createClient().auth.updateUser({
+      const { error } = await supabase.auth.updateUser({
         password: password,
       });
 
