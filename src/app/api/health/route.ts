@@ -1,5 +1,5 @@
 // app/api/health/route.ts
-import { ApiResponse } from "@/lib/api/clients";
+import { ApiResponse } from "@/lib/api/response-utils"
 import { SystemService } from "@/lib/services/system-service";
 
 export async function GET(request: Request) {
