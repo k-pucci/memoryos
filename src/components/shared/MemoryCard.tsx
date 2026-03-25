@@ -111,7 +111,7 @@ export function MemoryCard({
 
         {/* Bottom right hover arrow */}
         <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <ArrowRight size={16} className="text-muted-foreground" />
+          <ArrowRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
       </CardContent>
     </Card>

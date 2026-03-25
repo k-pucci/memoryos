@@ -138,28 +138,32 @@ export default function Layout({
       {/* Main Content */}
       {scrollMode === "container" ? (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-shrink-0 p-6 pb-4">
-            <LayoutHeader
-              onNewMemory={() => navigateTo("/new-memory")}
-              searchFunction={searchMemories}
-              renderResult={renderMemoryResult}
-              onResultClick={handleResultClick}
-              onViewAllResults={handleViewAllResults}
-            />
-          </div>
+          {currentPage !== "Chat" && (
+            <div className="flex-shrink-0 p-6 pb-4">
+              <LayoutHeader
+                onNewMemory={() => navigateTo("/new-memory")}
+                searchFunction={searchMemories}
+                renderResult={renderMemoryResult}
+                onResultClick={handleResultClick}
+                onViewAllResults={handleViewAllResults}
+              />
+            </div>
+          )}
           <div className="flex-1 overflow-hidden">{children}</div>
         </div>
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-shrink-0 sticky top-0 bg-background/95 backdrop-blur-sm z-10 p-6 pb-4">
-            <LayoutHeader
-              onNewMemory={() => navigateTo("/new-memory")}
-              searchFunction={searchMemories}
-              renderResult={renderMemoryResult}
-              onResultClick={handleResultClick}
-              onViewAllResults={handleViewAllResults}
-            />
-          </div>
+          {currentPage !== "Chat" && (
+            <div className="flex-shrink-0 sticky top-0 bg-background/95 backdrop-blur-sm z-10 p-6 pb-4">
+              <LayoutHeader
+                onNewMemory={() => navigateTo("/new-memory")}
+                searchFunction={searchMemories}
+                renderResult={renderMemoryResult}
+                onResultClick={handleResultClick}
+                onViewAllResults={handleViewAllResults}
+              />
+            </div>
+          )}
           <div className="flex-1 overflow-auto custom-scrollbar">
             <div className={contentPadding ? "p-6 pt-0" : ""}>{children}</div>
           </div>
