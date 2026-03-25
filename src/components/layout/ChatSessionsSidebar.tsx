@@ -1,7 +1,8 @@
 // components/layout/ChatSessionsSidebar.tsx - Simplified with extracted ChatSessionItem
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useChatSessions } from "@/hooks/useChatSessions";
@@ -15,20 +16,27 @@ interface ChatSessionsSidebarProps {
   onSessionDeleted: (sessionId: string) => void;
 }
 
-export function ChatSessionsSidebar({ 
-  isVisible, 
-  currentSessionId, 
-  onSessionSelect, 
+function ChatSessionsSidebarContent({
+  isVisible,
+  currentSessionId: propSessionId,
+  onSessionSelect,
   onNewChat,
-  onSessionDeleted 
+  onSessionDeleted
 }: ChatSessionsSidebarProps) {
-  const { sessions, loading, createSession, deleteSession } = useChatSessions(isVisible);
+  const searchParams = useSearchParams();
+  const urlSessionId = searchParams.get("session");
+  // Use URL session ID if available, fall back to prop
+  const currentSessionId = urlSessionId || propSessionId;
 
-  const handleNewChat = async () => {
-    const sessionId = await createSession();
-    if (sessionId) {
-      onNewChat(sessionId);
-    }
+  const { sessions, loading, deleteSession } = useChatSessions(isVisible, currentSessionId);
+
+  const handleNewChat = () => {
+    // If already on a clean chat page (no session), do nothing
+    if (!currentSessionId) return;
+
+    // Don't create a session yet - just navigate to empty chat
+    // Session will be created when user sends first message with proper title
+    onNewChat("");
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -71,5 +79,29 @@ export function ChatSessionsSidebar({
         </div>
       )}
     </div>
+  );
+}
+
+export function ChatSessionsSidebar(props: ChatSessionsSidebarProps) {
+  if (!props.isVisible) return null;
+
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col space-y-1 mt-4 flex-1 min-h-0">
+        <Button
+          variant="ghost"
+          disabled
+          className="justify-start text-sidebar-foreground/70 px-3 py-2 h-auto"
+        >
+          <Plus size={16} className="mr-3 flex-shrink-0" />
+          <span className="text-sm">New Chat</span>
+        </Button>
+        <div className="px-3 py-2 text-xs text-sidebar-foreground/50">
+          Loading chats...
+        </div>
+      </div>
+    }>
+      <ChatSessionsSidebarContent {...props} />
+    </Suspense>
   );
 }

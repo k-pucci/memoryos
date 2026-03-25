@@ -6,14 +6,17 @@ export class InternalSearchService {
     query: string,
     userId: string,
     embedding?: number[],
-    limit: number = 15
+    limit: number = 15,
+    customThreshold?: number
   ) {
-    const { query: searchQuery, limit: searchLimit = 10, exclude_ids = [], threshold = 0.7 } = {
-      query,
-      limit,
-      exclude_ids: [],
-      threshold: 0.7
-    };
+    const searchLimit = limit;
+    // Use custom threshold if provided, otherwise auto-calculate
+    const threshold = customThreshold ?? (query.length <= 10 ? 0.3 : 0.5);
+
+    let semanticResults: any[] = [];
+    let textResults: any[] = [];
+
+    console.log(`🔍 Searching memories for query: "${query}" (threshold: ${threshold})`);
 
     // Try semantic search first if embedding is provided
     if (embedding && Array.isArray(embedding) && embedding.length === 384) {
@@ -25,36 +28,69 @@ export class InternalSearchService {
           user_filter: userId
         });
 
-        if (!error && data && data.length > 0) {
-          return data;
+        if (error) {
+          console.error("❌ Semantic search error:", error.message);
+        } else if (data && data.length > 0) {
+          console.log(`✅ Semantic search found ${data.length} results`);
+          semanticResults = data;
+        } else {
+          console.log("⚠️ Semantic search returned no results");
         }
       } catch (error) {
-        console.error("Semantic search failed:", error);
+        console.error("❌ Semantic search failed:", error);
       }
     }
 
-    // Text search fallback
-    if (!query?.trim()) {
-      return [];
+    // ALWAYS try text search as well (not just fallback)
+    if (query?.trim()) {
+      try {
+        const searchTerm = query.trim();
+
+        const { data, error } = await supabaseAdmin
+          .from("memories")
+          .select("id, title, content, summary, category, memory_type, tags, created_at, updated_at")
+          .eq("user_id", userId)
+          .or(
+            `title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%`
+          )
+          .order("created_at", { ascending: false })
+          .limit(searchLimit);
+
+        if (error) {
+          console.error("❌ Text search error:", error.message);
+        } else if (data && data.length > 0) {
+          console.log(`✅ Text search found ${data.length} results`);
+          textResults = data;
+        } else {
+          console.log("⚠️ Text search returned no results");
+        }
+      } catch (error) {
+        console.error("❌ Text search failed:", error);
+      }
     }
 
-    let queryBuilder = supabaseAdmin
-      .from("memories")
-      .select("id, title, content, summary, category, memory_type, tags, created_at, updated_at")
-      .eq("user_id", userId)
-      .limit(searchLimit);
+    // Combine and deduplicate results (semantic results prioritized)
+    const seenIds = new Set<string>();
+    const combinedResults: any[] = [];
 
-    const searchTerm = query.trim();
-    queryBuilder = queryBuilder.or(
-      `title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%`
-    );
+    // Add semantic results first (higher priority)
+    for (const result of semanticResults) {
+      if (!seenIds.has(result.id)) {
+        seenIds.add(result.id);
+        combinedResults.push(result);
+      }
+    }
 
-    queryBuilder = queryBuilder.order("created_at", { ascending: false });
+    // Add text results that weren't in semantic results
+    for (const result of textResults) {
+      if (!seenIds.has(result.id)) {
+        seenIds.add(result.id);
+        combinedResults.push(result);
+      }
+    }
 
-    const { data, error } = await queryBuilder;
-    
-    if (error) throw error;
-    
-    return data || [];
+    console.log(`📊 Combined results: ${combinedResults.length} (semantic: ${semanticResults.length}, text: ${textResults.length})`);
+
+    return combinedResults.slice(0, searchLimit);
   }
 }

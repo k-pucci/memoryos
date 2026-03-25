@@ -1,7 +1,7 @@
 // /app/chat/page.tsx - Floating chat widget with conversation starters
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,9 +15,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useEmbeddings } from "@/hooks/useEmbeddings";
+import { useChatSettings } from "@/hooks/useChatSettings";
 import { DashboardLayout } from "@/components/layout/PageLayout";
-import { useRouter } from "next/navigation";
+import { ChatSettingsDialog } from "@/components/chat/ChatSettingsDialog";
+import { MemoryDetailPanel } from "@/components/chat/MemoryDetailPanel";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface Message {
   id: string;
@@ -38,30 +43,237 @@ const quickActions = [
 ];
 
 export default function ChatPage() {
+  return (
+    <Suspense fallback={
+      <DashboardLayout currentPage="Chat" title="AI Chat" description="Intelligent conversations with your knowledge base">
+        <div className="w-full max-w-2xl lg:max-w-5xl xl:max-w-6xl mx-auto h-full px-4 sm:px-6 lg:px-8">
+          <div className="h-[calc(100vh-8rem)] flex flex-col items-center justify-center">
+            <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+          </div>
+        </div>
+      </DashboardLayout>
+    }>
+      <ChatPageContent />
+    </Suspense>
+  );
+}
+
+function ChatPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionIdFromUrl = searchParams.get("session");
+
   const { generateEmbedding, isLoading: isEmbeddingLoading } = useEmbeddings();
+  const { settings: chatSettings, updateSettings: updateChatSettings } = useChatSettings();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false); // Track if actively streaming
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const latestUserMessageRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRestore = useRef<string | null>(null);
 
+  // Track sessions we created ourselves (skip loading messages for these)
+  const createdSessionsRef = useRef<Set<string>>(new Set());
+  // Track if we're currently sending a message (prevent effect interference)
+  const isSendingRef = useRef(false);
+  // Track the ID of the latest user message for spotlight scroll
+  const [latestUserMessageId, setLatestUserMessageId] = useState<string | null>(null);
+  const [selectedMemoryId, setSelectedMemoryId] = useState<string | null>(null);
+
+  // Get the scroll container element from ScrollArea
+  const getScrollContainer = useCallback(() => {
+    return scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+  }, []);
+
+  // Save scroll position to sessionStorage
+  const saveScrollPosition = useCallback((sessionId: string) => {
+    const container = getScrollContainer();
+    if (container) {
+      const scrollPosition = container.scrollTop;
+      sessionStorage.setItem(`chat-scroll-${sessionId}`, String(scrollPosition));
+    }
+  }, [getScrollContainer]);
+
+  // Restore scroll position from sessionStorage
+  const restoreScrollPosition = useCallback((sessionId: string) => {
+    const savedPosition = sessionStorage.getItem(`chat-scroll-${sessionId}`);
+    if (savedPosition) {
+      const container = getScrollContainer();
+      if (container) {
+        container.scrollTop = parseInt(savedPosition, 10);
+      }
+    }
+  }, [getScrollContainer]);
+
+  // Save scroll position on scroll (debounced)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!currentSessionId) return;
+
+    const container = getScrollContainer();
+    if (!container) return;
+
+    let timeoutId: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        saveScrollPosition(currentSessionId);
+      }, 100);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, [currentSessionId, getScrollContainer, saveScrollPosition]);
+
+  // Save scroll position before unload
+  useEffect(() => {
+    if (!currentSessionId) return;
+
+    const handleBeforeUnload = () => {
+      saveScrollPosition(currentSessionId);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentSessionId, saveScrollPosition]);
+
+  // Restore scroll position after messages are loaded
+  useEffect(() => {
+    if (pendingScrollRestore.current && messages.length > 0 && !isLoadingMessages) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        if (pendingScrollRestore.current) {
+          restoreScrollPosition(pendingScrollRestore.current);
+          pendingScrollRestore.current = null;
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [messages, isLoadingMessages, restoreScrollPosition]);
+
+  // Load messages when session ID changes
+  const loadSessionMessages = useCallback(async (sessionId: string) => {
+    setIsLoadingMessages(true);
+    try {
+      const response = await fetch(`/api/chat/sessions/${sessionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const loadedMessages: Message[] = (data.messages || []).map((msg: any) => ({
+          id: msg.id || `msg-${msg.created_at}`,
+          content: msg.content,
+          role: msg.role,
+          agent_used: msg.agent_used,
+          sources: msg.sources,
+          timestamp: msg.created_at,
+        }));
+        setMessages(loadedMessages);
+        // Mark that we need to restore scroll position after render
+        pendingScrollRestore.current = sessionId;
+      } else {
+        // Session doesn't exist or access denied - redirect to clean chat
+        console.warn("Session not found, starting fresh chat");
+        setMessages([]);
+        setCurrentSessionId(null);
+        router.replace('/chat', { scroll: false });
+      }
+    } catch (error) {
+      console.error("Error loading session messages:", error);
+      setMessages([]);
+      setCurrentSessionId(null);
+      router.replace('/chat', { scroll: false });
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  }, [router]);
+
+  // Sync session ID from URL and load messages
+  useEffect(() => {
+    // Don't interfere while actively sending a message
+    if (isSendingRef.current) return;
+
+    if (sessionIdFromUrl && sessionIdFromUrl !== currentSessionId) {
+      setCurrentSessionId(sessionIdFromUrl);
+      // Only load messages if we didn't just create this session
+      if (!createdSessionsRef.current.has(sessionIdFromUrl)) {
+        loadSessionMessages(sessionIdFromUrl);
+      }
+    } else if (!sessionIdFromUrl && currentSessionId) {
+      // URL cleared (new chat without session)
+      setCurrentSessionId(null);
+      setMessages([]);
+    }
+  }, [sessionIdFromUrl, currentSessionId, loadSessionMessages]);
+
+  // Spotlight scroll - scroll so user message is near top with room for AI response below
+  useEffect(() => {
+    if (latestUserMessageId) {
+      // Small delay to ensure DOM is updated after state change
+      const timer = setTimeout(() => {
+        const container = getScrollContainer();
+        if (container && latestUserMessageRef.current) {
+          // Get the message element's position
+          const messageEl = latestUserMessageRef.current;
+          const messageTop = messageEl.offsetTop;
+
+          // Position the user message about 15% down from top, leaving ~85% for AI response
+          const containerHeight = container.clientHeight;
+          const targetOffset = containerHeight * 0.15;
+
+          // Scroll so the user message sits at the target offset from top
+          const scrollTarget = Math.max(0, messageTop - targetOffset);
+          container.scrollTo({ top: scrollTarget, behavior: "smooth" });
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [latestUserMessageId, getScrollContainer]);
+
+  // Create a new session
+  const createSession = async (title: string): Promise<string | null> => {
+    try {
+      const response = await fetch('/api/chat/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.session.id;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error creating session:", error);
+      return null;
+    }
+  };
 
   // Send message
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
 
+    // Mark that we're sending to prevent effect interference
+    isSendingRef.current = true;
+
+    const userMessageId = `msg-${Date.now()}-user`;
     const userMessage: Message = {
-      id: `msg-${Date.now()}-user`,
+      id: userMessageId,
       role: "user",
       content: inputMessage,
       timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    setLatestUserMessageId(userMessageId); // Trigger spotlight scroll
     const currentMessage = inputMessage;
     setInputMessage("");
 
@@ -73,6 +285,22 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
+      // Create a session if one doesn't exist
+      let sessionId = currentSessionId;
+      if (!sessionId) {
+        const title = currentMessage.length > 50
+          ? currentMessage.substring(0, 50) + "..."
+          : currentMessage;
+        sessionId = await createSession(title);
+        if (sessionId) {
+          // Mark this session as created by us (skip loading messages for it)
+          createdSessionsRef.current.add(sessionId);
+          setCurrentSessionId(sessionId);
+          // Update URL without triggering React navigation
+          window.history.replaceState(null, '', `/chat?session=${sessionId}`);
+        }
+      }
+
       console.log("🤖 Generating embedding for unified chat...");
 
       let embedding = null;
@@ -83,15 +311,36 @@ export default function ChatPage() {
         console.error("❌ Failed to generate embedding:", error);
       }
 
-      console.log("📤 Calling unified chat API...");
+      console.log("📤 Calling streaming chat API...");
 
-      const response = await fetch("/api/chat/unified", {
+      // Create a placeholder message for streaming
+      const aiMessageId = `msg-${Date.now()}-ai`;
+      const aiMessage: Message = {
+        id: aiMessageId,
+        role: "assistant",
+        content: "",
+        agent_used: "Memory Assistant",
+        sources: [],
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, aiMessage]);
+
+      // Use streaming endpoint
+      const response = await fetch("/api/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: currentMessage,
           embedding,
           chat_history: messages.slice(-10),
+          session_id: sessionId,
+          retrieval_settings: {
+            threshold: chatSettings.threshold,
+            contentPreviewLength: chatSettings.contentPreviewLength,
+            maxResults: chatSettings.maxResults,
+            customDirective: chatSettings.customDirective || undefined,
+          },
         }),
       });
 
@@ -99,20 +348,69 @@ export default function ChatPage() {
         throw new Error(`API call failed: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("📥 Unified chat response:", data);
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-      const aiMessage: Message = {
-        id: `msg-${Date.now()}-ai`,
-        role: "assistant",
-        content: data.response,
-        agent_used: data.agent_used,
-        mentioned_agents: data.mentioned_agents,
-        sources: data.sources,
-        timestamp: new Date().toISOString(),
-      };
+      if (!reader) {
+        throw new Error("No response body");
+      }
 
-      setMessages((prev) => [...prev, aiMessage]);
+      let streamedContent = "";
+      let streamedSources: any[] = [];
+      let hasStartedStreaming = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === "chunk" && data.content) {
+                // Mark streaming started on first content chunk
+                if (!hasStartedStreaming) {
+                  hasStartedStreaming = true;
+                  setIsStreaming(true);
+                }
+                streamedContent += data.content;
+                // Update the message content in real-time
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === aiMessageId
+                      ? { ...msg, content: streamedContent }
+                      : msg
+                  )
+                );
+              } else if (data.type === "sources") {
+                // Store sources but don't render yet — wait until streaming is done
+                streamedSources = data.sources || [];
+              }
+            } catch (e) {
+              // Ignore parse errors for incomplete chunks
+            }
+          }
+        }
+      }
+
+      setIsStreaming(false);
+
+      // Attach sources after streaming is done so they appear below the response
+      if (streamedSources.length > 0) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? { ...msg, sources: streamedSources }
+              : msg
+          )
+        );
+      }
+
+      console.log("📥 Streaming complete");
     } catch (error) {
       console.error("Error in unified chat:", error);
 
@@ -127,13 +425,20 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setIsStreaming(false);
+      isSendingRef.current = false;
+      // Refocus textarea so user can immediately type another message
+      textareaRef.current?.focus();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      // Don't send if already loading
+      if (!isLoading && !isEmbeddingLoading) {
+        sendMessage();
+      }
     }
   };
 
@@ -164,23 +469,35 @@ export default function ChatPage() {
     textareaRef.current?.focus();
   };
 
-  // Handle source click
+  // Handle source click - open in side panel instead of navigating away
   const handleSourceClick = (sourceId: string) => {
-    router.push(`/memory/${sourceId}`);
+    setSelectedMemoryId(sourceId);
   };
 
   return (
+    <>
     <DashboardLayout
       currentPage="Chat"
       title="AI Chat"
       description="Intelligent conversations with your knowledge base"
+      actions={
+        <ChatSettingsDialog
+          settings={chatSettings}
+          onUpdateSettings={updateChatSettings}
+        />
+      }
     >
       {/* Floating Chat Container */}
       <div className="w-full max-w-2xl lg:max-w-5xl xl:max-w-6xl mx-auto h-full px-4 sm:px-6 lg:px-8">
-        <div className="h-[calc(100vh-16rem)] flex flex-col">
+        <div className="h-[calc(100vh-8rem)] flex flex-col">
           {/* Chat Messages */}
           <div className="flex-1 min-h-0">
-            {messages.length === 0 ? (
+            {(isLoadingMessages || (sessionIdFromUrl && messages.length === 0)) ? (
+              <div className="h-full flex flex-col items-center justify-center text-center">
+                <div className="w-8 h-8 border-2 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                <p className="text-muted-foreground">Loading conversation...</p>
+              </div>
+            ) : messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center">
                 <div className="p-4 bg-primary/10 rounded-full mb-6">
                   <Sparkles size={32} className="text-primary" />
@@ -206,22 +523,31 @@ export default function ChatPage() {
                 </div>
               </div>
             ) : (
-              <ScrollArea className="h-full pr-4">
-                <div className="space-y-6 p-6">
-                  {messages.map((message) => (
-                    <MessageBubble
-                      key={message.id}
-                      message={message}
-                      copyMessage={copyMessage}
-                      onSourceClick={handleSourceClick}
-                    />
-                  ))}
+              <div className="relative h-full">
+                {/* Top fade/blur effect */}
+                <div className="absolute top-0 left-0 right-4 h-6 bg-gradient-to-b from-background to-transparent z-10 pointer-events-none" />
 
-                  {isLoading && <LoadingIndicator />}
+                <ScrollArea ref={scrollAreaRef} className="h-full pr-4">
+                  <div className="space-y-6 p-6 pt-8">
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        ref={message.id === latestUserMessageId ? latestUserMessageRef : null}
+                      >
+                        <MessageBubble
+                          message={message}
+                          copyMessage={copyMessage}
+                          onSourceClick={handleSourceClick}
+                        />
+                      </div>
+                    ))}
 
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
+                    {isLoading && !isStreaming && <LoadingIndicator />}
+
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+              </div>
             )}
           </div>
 
@@ -240,6 +566,23 @@ export default function ChatPage() {
         </div>
       </div>
     </DashboardLayout>
+
+    {/* Memory Detail Side Panel */}
+    <MemoryDetailPanel
+      memoryId={selectedMemoryId}
+      onClose={() => setSelectedMemoryId(null)}
+      onDeleted={(deletedId) => {
+        setSelectedMemoryId(null);
+        // Remove deleted memory from all message sources
+        setMessages((prev) =>
+          prev.map((msg) => ({
+            ...msg,
+            sources: msg.sources?.filter((s: any) => s.id !== deletedId),
+          }))
+        );
+      }}
+    />
+    </>
   );
 }
 
@@ -258,6 +601,9 @@ function MessageBubble({
   const [showActions, setShowActions] = useState(false);
 
   if (message.role === "assistant") {
+    // Don't render empty assistant messages (loading indicator handles this)
+    if (!message.content) return null;
+
     // AI messages - Claude-style with no avatar/background
     return (
       <div
@@ -267,9 +613,11 @@ function MessageBubble({
       >
         <div className="flex flex-col w-full relative group">
           <div className="px-0 py-3 relative">
-            <p className="whitespace-pre-wrap leading-relaxed text-sm text-foreground">
-              {message.content}
-            </p>
+            <div className="prose-chat">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {message.content}
+              </ReactMarkdown>
+            </div>
 
             {showActions && (
               <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -298,14 +646,14 @@ function MessageBubble({
                     <button
                       key={source.id || index}
                       onClick={() => onSourceClick(source.id)}
-                      className="w-full text-left text-xs p-2 rounded-lg bg-card hover:bg-muted border border-border/50 hover:border-primary/30 transition-colors cursor-pointer group card-shadow"
+                      className="w-full text-left text-xs p-2 rounded-lg bg-card border border-border/50 hover:border-primary/30 transition-colors cursor-pointer card-shadow group/source"
                     >
-                      <div className="font-medium group-hover:text-primary transition-colors">
+                      <div className="font-medium group-hover/source:text-primary transition-colors">
                         {source.title}
                       </div>
-                      {source.summary && (
-                        <div className="text-muted-foreground mt-1 line-clamp-1">
-                          {source.summary}
+                      {source.content && (
+                        <div className="text-muted-foreground mt-1 line-clamp-2">
+                          {source.content}
                         </div>
                       )}
                     </button>
@@ -315,12 +663,15 @@ function MessageBubble({
             )}
           </div>
 
-          <div className="text-xs text-muted-foreground mt-1">
-            {new Date(message.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
+          {/* Only show timestamp once content exists */}
+          {message.content && (
+            <div className="text-xs text-muted-foreground mt-1">
+              {new Date(message.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -368,21 +719,23 @@ function MessageBubble({
   );
 }
 
-// Loading Indicator Component
+// Loading Indicator Component - subtle pulsing dots
 function LoadingIndicator() {
   return (
     <div className="flex justify-start">
       <div className="flex flex-col w-full">
         <div className="px-0 py-3">
-          <div className="flex space-x-1">
-            <div className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"></div>
+          <div className="flex space-x-1.5 items-center">
             <div
-              className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"
-              style={{ animationDelay: "0.2s" }}
+              className="h-1.5 w-1.5 bg-muted-foreground/50 rounded-full animate-pulse"
             ></div>
             <div
-              className="h-2 w-2 bg-muted-foreground/60 rounded-full animate-bounce"
-              style={{ animationDelay: "0.4s" }}
+              className="h-1.5 w-1.5 bg-muted-foreground/50 rounded-full animate-pulse"
+              style={{ animationDelay: "0.15s" }}
+            ></div>
+            <div
+              className="h-1.5 w-1.5 bg-muted-foreground/50 rounded-full animate-pulse"
+              style={{ animationDelay: "0.3s" }}
             ></div>
           </div>
         </div>
@@ -429,7 +782,6 @@ function ChatInput({
               value={inputMessage}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || isEmbeddingLoading}
             />
 
             {inputMessage.includes("@") && (
@@ -453,17 +805,6 @@ function ChatInput({
           </Button>
         </div>
 
-        {(isLoading || isEmbeddingLoading) && (
-          <div className="mt-3 text-xs text-center">
-            {isEmbeddingLoading ? (
-              <span className="text-amber-600 dark:text-amber-400">
-                Generating embedding...
-              </span>
-            ) : (
-              <span className="text-primary">AI is thinking...</span>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

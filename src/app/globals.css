@@ -508,3 +508,148 @@
       0 4px 6px -4px rgb(217 152 115 / 0.2);
   }
 }
+
+/* Markdown/Prose styles for AI chat messages */
+.prose-chat {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: var(--foreground);
+}
+
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3,
+.prose-chat h4,
+.prose-chat h5,
+.prose-chat h6 {
+  color: var(--foreground);
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+
+.prose-chat h1 { font-size: 1.5em; }
+.prose-chat h2 { font-size: 1.25em; }
+.prose-chat h3 { font-size: 1.125em; }
+
+.prose-chat p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+
+.prose-chat p:first-child {
+  margin-top: 0;
+}
+
+.prose-chat strong {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose-chat em {
+  font-style: italic;
+}
+
+.prose-chat ul,
+.prose-chat ol {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  padding-left: 1.5em;
+}
+
+.prose-chat ul {
+  list-style-type: disc;
+}
+
+.prose-chat ol {
+  list-style-type: decimal;
+}
+
+.prose-chat li {
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.prose-chat li::marker {
+  color: var(--muted-foreground);
+}
+
+.prose-chat hr {
+  border-color: var(--border);
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+
+.prose-chat blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1em;
+  margin-left: 0;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+
+.prose-chat code {
+  background-color: var(--muted);
+  padding: 0.125em 0.375em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: var(--font-mono);
+}
+
+.prose-chat pre {
+  background-color: var(--muted);
+  padding: 1em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.prose-chat pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.875em;
+}
+
+.prose-chat a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.prose-chat a:hover {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+/* Table styles */
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  font-size: 0.875em;
+}
+
+.prose-chat th,
+.prose-chat td {
+  border: 1px solid var(--border);
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.prose-chat th {
+  background-color: var(--muted);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.prose-chat tr:nth-child(even) {
+  background-color: var(--muted);
+  opacity: 0.5;
+}
+
+.prose-chat tbody tr:hover {
+  background-color: var(--muted);
+}

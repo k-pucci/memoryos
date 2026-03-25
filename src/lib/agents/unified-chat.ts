@@ -33,6 +33,13 @@ interface Memory {
   similarity?: number;
 }
 
+export interface RetrievalConfig {
+  threshold?: number;
+  contentPreviewLength?: number;
+  maxResults?: number;
+  customDirective?: string;
+}
+
 export class MemoryAssistant {
   private readonly systemPrompt = `You are a memory assistant, a helpful AI that specializes in organizing, searching, and summarizing personal memories and knowledge.
 
@@ -86,14 +93,16 @@ Remember: You're working with the user's personal memory collection, so be helpf
   private async searchMemories(
     query: string,
     userId: string,
-    embedding: number[]
+    embedding: number[],
+    config?: RetrievalConfig
   ): Promise<Memory[]> {
     try {
       const memories = await InternalSearchService.searchMemoriesForUser(
         query,
         userId,
         embedding,
-        15
+        config?.maxResults ?? 15,
+        config?.threshold
       );
 
       // Filter for weekly review if needed
@@ -171,7 +180,61 @@ Remember: You're working with the user's personal memory collection, so be helpf
     }
   }
 
-  private buildMemoryContext(memories: Memory[]): string {
+  // Streaming version for real-time responses
+  async *processMessageStream(
+    message: string,
+    userId: string,
+    embedding: number[],
+    chatHistory: ChatMessage[] = [],
+    retrievalConfig?: RetrievalConfig
+  ): AsyncGenerator<{ type: 'chunk' | 'sources' | 'done'; content?: string; sources?: Memory[] }> {
+    console.log("Processing streaming message:", message, "for user:", userId);
+
+    // Search for relevant memories
+    const relevantMemories = await this.searchMemories(message, userId, embedding, retrievalConfig);
+    console.log(`Found ${relevantMemories.length} relevant memories`);
+
+    // Yield sources first so frontend can display them
+    yield { type: 'sources', sources: relevantMemories.slice(0, 5) };
+
+    // Build context
+    const previewLength = retrievalConfig?.contentPreviewLength ?? 300;
+    const memoryContext = this.buildMemoryContext(relevantMemories, previewLength);
+    const chatContext = chatHistory.slice(-6).map((msg) => `${msg.role}: ${msg.content}`).join("\n");
+    const contextPrompt = this.buildContextPrompt(message, memoryContext, chatContext);
+
+    try {
+      const systemContent = retrievalConfig?.customDirective
+        ? `${this.systemPrompt}\n\nAdditional user instructions:\n${retrievalConfig.customDirective}`
+        : this.systemPrompt;
+
+      const stream = await groq.chat.completions.create({
+        model: "openai/gpt-oss-20b",
+        messages: [
+          { role: "system", content: systemContent },
+          { role: "user", content: contextPrompt },
+        ],
+        max_tokens: 800,
+        temperature: 0.4,
+        stream: true,
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          yield { type: 'chunk', content };
+        }
+      }
+
+      yield { type: 'done' };
+    } catch (error) {
+      console.error("Streaming response error:", error);
+      yield { type: 'chunk', content: "I'm having trouble generating a response right now. Please try again." };
+      yield { type: 'done' };
+    }
+  }
+
+  private buildMemoryContext(memories: Memory[], previewLength: number = 300): string {
     if (memories.length === 0) {
       return "No relevant memories found.";
     }
@@ -188,9 +251,11 @@ Remember: You're working with the user's personal memory collection, so be helpf
           context += `Summary: ${memory.summary}\n`;
         }
 
-        context += `Content: ${memory.content.substring(0, 300)}${
-          memory.content.length > 300 ? "..." : ""
-        }\n`;
+        context += previewLength > 0
+          ? `Content: ${memory.content.substring(0, previewLength)}${
+              memory.content.length > previewLength ? "..." : ""
+            }\n`
+          : `Content: ${memory.content}\n`;
 
         if (memory.tags && memory.tags.length > 0) {
           context += `Tags: ${memory.tags.join(", ")}\n`;

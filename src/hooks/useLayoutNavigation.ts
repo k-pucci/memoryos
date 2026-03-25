@@ -17,7 +17,12 @@ export function useLayoutNavigation() {
 
   const handleNewChat = (sessionId: string, onSessionChange?: (id: string) => void) => {
     onSessionChange?.(sessionId);
-    router.push(`/chat?session=${sessionId}`);
+    // If no session ID, navigate to clean chat page (session created on first message)
+    if (sessionId) {
+      router.push(`/chat?session=${sessionId}`);
+    } else {
+      router.push('/chat');
+    }
   };
 
   const handleChatSessionDeleted = (sessionId: string, currentSessionId?: string) => {
