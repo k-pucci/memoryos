@@ -11,7 +11,7 @@ export class InternalSearchService {
   ) {
     const searchLimit = limit;
     // Use custom threshold if provided, otherwise auto-calculate
-    const threshold = customThreshold ?? (query.length <= 10 ? 0.3 : 0.5);
+    const threshold = customThreshold ?? (query.length <= 10 ? 0.3 : 0.4);
 
     let semanticResults: any[] = [];
     let textResults: any[] = [];
@@ -41,8 +41,11 @@ export class InternalSearchService {
       }
     }
 
-    // ALWAYS try text search as well (not just fallback)
-    if (query?.trim()) {
+    // ALWAYS try text search as well (not just fallback).
+    // Only fetch as many text results as there are remaining slots so the
+    // combined total never silently exceeds the user's maxResults setting.
+    const remainingSlots = searchLimit - semanticResults.length;
+    if (query?.trim() && remainingSlots > 0) {
       try {
         const searchTerm = query.trim();
 
@@ -54,7 +57,7 @@ export class InternalSearchService {
             `title.ilike.%${searchTerm}%,content.ilike.%${searchTerm}%,summary.ilike.%${searchTerm}%`
           )
           .order("created_at", { ascending: false })
-          .limit(searchLimit);
+          .limit(remainingSlots);
 
         if (error) {
           console.error("❌ Text search error:", error.message);

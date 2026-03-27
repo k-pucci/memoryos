@@ -74,10 +74,10 @@ export default function LoginPage() {
         </div>
 
         <Card className="bg-card border-border card-shadow">
-          <CardHeader>
+          <CardHeader className="px-8 pt-8 pb-4">
             <CardTitle className="text-center text-foreground">Sign In</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-8 pb-8">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && <ErrorAlert message={error} />}
 

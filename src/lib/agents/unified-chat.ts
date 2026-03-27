@@ -251,9 +251,20 @@ Remember: You're working with the user's personal memory collection, so be helpf
           context += `Summary: ${memory.summary}\n`;
         }
 
-        context += previewLength > 0
-          ? `Content: ${memory.content.substring(0, previewLength)}${
-              memory.content.length > previewLength ? "..." : ""
+        // Top 3 results get expanded context so the LLM has enough detail to answer.
+        // If the user set a preview length, top results get at least 800 chars (or
+        // their setting if it's already larger). Full-content mode (previewLength=0)
+        // is unaffected and sends everything for all results.
+        const effectiveLength =
+          previewLength === 0
+            ? 0
+            : index < 3
+            ? Math.max(previewLength, 800)
+            : previewLength;
+
+        context += effectiveLength > 0
+          ? `Content: ${memory.content.substring(0, effectiveLength)}${
+              memory.content.length > effectiveLength ? "..." : ""
             }\n`
           : `Content: ${memory.content}\n`;
 

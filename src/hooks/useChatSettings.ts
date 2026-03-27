@@ -13,7 +13,7 @@ export interface ChatSettings {
 const STORAGE_KEY = "chat-retrieval-settings";
 
 const DEFAULT_SETTINGS: ChatSettings = {
-  threshold: 0.5,
+  threshold: 0.4,
   contentPreviewLength: 300,
   maxResults: 15,
   customDirective: "",
